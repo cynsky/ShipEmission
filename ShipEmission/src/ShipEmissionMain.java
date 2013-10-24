@@ -68,10 +68,10 @@ public class ShipEmissionMain {
 	public static void main(String[] args) throws TTransportException,
 			TException, ClientException, SQLException, IOException {
          //geoline info write to aisline.txt
-		 FileWriter fw = new FileWriter("f:/wzh/aisline.txt");//创建FileWriter对象，用来写入字符流
+		 FileWriter fw = new FileWriter("e:/outputs/aisline.txt");//创建FileWriter对象，用来写入字符流
          BufferedWriter bw = new BufferedWriter(fw);    //将缓冲对文件的输出
          //grid emissions write to gridEms.txt
-         FileWriter gridWriter = new FileWriter("f:/wzh/gridEms.txt");//创建FileWriter对象，用来写入字符流
+         FileWriter gridWriter = new FileWriter("e:/outputs/gridEms.txt");//创建FileWriter对象，用来写入字符流
          BufferedWriter bgw = new BufferedWriter(gridWriter);    //将缓冲对文件的输出
 		
          Double double1 = 123456789.123456789;  
