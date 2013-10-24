@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/commons-cli-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/commons-httpclient-3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/commons-logging-1.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hadoop-0.20.2-cdh3u0-core.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hbase-0.20.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hive-exec-0.7.0-cdh3u0.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hive-metastore-0.7.0-cdh3u0.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hive-serde-0.7.0-cdh3u0.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hypertable-0.9.5.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/hypertable-0.9.5.0-examples.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/junit-4.3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/libthrift-0.6.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/log4j-1.2.13.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/slf4j-api-1.5.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/slf4j-log4j12-1.5.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="F:/wzh/java/zookeeper-3.2.2.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
