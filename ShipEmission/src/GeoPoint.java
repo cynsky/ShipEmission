@@ -54,7 +54,6 @@ public GeoPoint(String mmsi,long timestamp,double sog,double lon,double lat,doub
 		this.longitudeE6 = (int) (lon * CONVERSION_FACTOR);
 	}
 
-
 	
 	/**
 	 * @param latitude
@@ -154,7 +153,7 @@ public GeoPoint(String mmsi,long timestamp,double sog,double lon,double lat,doub
 		double tt = Math.acos(t1 + t2 + t3);
 
 		//return (int) (RADIUS_EARTH_METERS * tt);
-		//ÐÞ¸ÄÎªdouble
+		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½double
 		return RADIUS_EARTH_METERS * tt;
 	}
 
