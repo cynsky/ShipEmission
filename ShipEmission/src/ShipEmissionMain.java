@@ -21,34 +21,34 @@ public class ShipEmissionMain {
 	
 	// create table shipping(ais MAXVERSIONS=1, grid MAXVERSIONS=1,INDEX ais,QUALIFIER INDEX ais,INDEX grid ) GROUP_COMMIT_INTERVAL = 50;
 
-	// ´æ´¢hypertableÖĞÈ¡³öµÄAISÏà¹ØÊı¾İ
+	// å­˜å‚¨hypertableä¸­å–å‡ºçš„AISç›¸å…³æ•°æ®
 	static String mmsi;
 	static String timestamp;
-	static String nav_status; // º½ĞĞ×´Ì¬
-	static String rot; // ×ªÏòÂÊ
+	static String nav_status; // èˆªè¡ŒçŠ¶æ€
+	static String rot; // è½¬å‘ç‡
 	static String sog;
-	static String pos_acc; // Éè±¸¶¨Î»¾«¶È
+	static String pos_acc; // è®¾å¤‡å®šä½ç²¾åº¦
 	static String lon;
 	static String lat;
 	static String cog;
-	static String true_head; // ´¬Ê×Ïò
+	static String true_head; // èˆ¹é¦–å‘
 	static String eta;
 	static String dest_id;
-	static String dest; // Ä¿µÄ¸Û
-	static String src_id; // Êı¾İÀ´Ô´
-	static String dist_to_port; // µ½Ä¿µÄ¸Û¾àÀë
-	static String blm_avg_speed; // Æ½¾ùËÙ¶È
+	static String dest; // ç›®çš„æ¸¯
+	static String src_id; // æ•°æ®æ¥æº
+	static String dist_to_port; // åˆ°ç›®çš„æ¸¯è·ç¦»
+	static String blm_avg_speed; // å¹³å‡é€Ÿåº¦
 	
-	//²ÉÓÃµÀ¸ñÀ­Ë¹Ëã·¨¶Ôµ¥´¬¹ì¼£½øĞĞÑ¹ËõÊ±£¬µãµ½Ö±Ïß¾àÀëµÄÅĞ¶Ï±ê×¼ tolerance
+	//é‡‡ç”¨é“æ ¼æ‹‰æ–¯ç®—æ³•å¯¹å•èˆ¹è½¨è¿¹è¿›è¡Œå‹ç¼©æ—¶ï¼Œç‚¹åˆ°ç›´çº¿è·ç¦»çš„åˆ¤æ–­æ ‡å‡† tolerance
 	static double tolerance=100; //distance less than 100 meters will be removed
 	
-	static long spanTime;//Á½¸ö±¨¸æµã¼äÊ±¼ä¼ä¸ô£¬µ¥Î»Ãë
-	static double avg_speed;//Æ½¾ùËÙ¶È
-	//Á½¸ö±¨¸æµã¼äÏß¶Î½ø¹ıµÄµ¥Ôª¸ñ¼ÇÂ¼£¬Êı¾İ¸ñÊ½£º
-	//µ¥Ôª¸ñµ×½Ç lon*100_lat*100_percent,percentÎªÕâ¶Î¾àÀëÔÚ¸Ãµ¥Ôª¸ñµÄ±ÈÀı£¬¶à¸ögridIdÓÃ@·Ö¸ô¿ª¡£
+	static long spanTime;//ä¸¤ä¸ªæŠ¥å‘Šç‚¹é—´æ—¶é—´é—´éš”ï¼Œå•ä½ç§’
+	static double avg_speed;//å¹³å‡é€Ÿåº¦
+	//ä¸¤ä¸ªæŠ¥å‘Šç‚¹é—´çº¿æ®µè¿›è¿‡çš„å•å…ƒæ ¼è®°å½•ï¼Œæ•°æ®æ ¼å¼ï¼š
+	//å•å…ƒæ ¼åº•è§’ lon*100_lat*100_percent,percentä¸ºè¿™æ®µè·ç¦»åœ¨è¯¥å•å…ƒæ ¼çš„æ¯”ä¾‹ï¼Œå¤šä¸ªgridIdç”¨@åˆ†éš”å¼€ã€‚
 	static String gridIds;
     static double emissions;
-	// ÓÃÓÚ¼ÆËãÁ¬¸ö±¨¸æµãÖ®¼äµÄÊ±¼ä¼ä¸ôºÍÆ½¾ùËÙ¶È
+	// ç”¨äºè®¡ç®—è¿ä¸ªæŠ¥å‘Šç‚¹ä¹‹é—´çš„æ—¶é—´é—´éš”å’Œå¹³å‡é€Ÿåº¦
 
 	static List<String> previous_record = new ArrayList<String>();
 	static List<String> current_record = new ArrayList<String>();
@@ -59,7 +59,7 @@ public class ShipEmissionMain {
 	static Ship ship;
 	static HqlResult2 aisRcd = null; // AIS records from hypertable
 	static String hql;
-	static int enlarge = 100;// ·Å´ó±¶Êı 0.1X0.1 ÆäÖµÎª10£¬0.01X0.01 Îª100
+	static int enlarge = 100;// æ”¾å¤§å€æ•° 0.1X0.1 å…¶å€¼ä¸º10ï¼Œ0.01X0.01 ä¸º100
 	static List<String> saveRcd=new ArrayList<String>();
 	static double shipTotalEms=0;
 	static ThriftClient client; 
@@ -68,14 +68,14 @@ public class ShipEmissionMain {
 	public static void main(String[] args) throws TTransportException,
 			TException, ClientException, SQLException, IOException {
          //geoline info write to aisline.txt
-		 FileWriter fw = new FileWriter("e:/outputs/aisline.txt");//´´½¨FileWriter¶ÔÏó£¬ÓÃÀ´Ğ´Èë×Ö·ûÁ÷
-         BufferedWriter bw = new BufferedWriter(fw);    //½«»º³å¶ÔÎÄ¼şµÄÊä³ö
+		 FileWriter fw = new FileWriter("e:/outputs/aisline.txt");//åˆ›å»ºFileWriterå¯¹è±¡ï¼Œç”¨æ¥å†™å…¥å­—ç¬¦æµ
+         BufferedWriter bw = new BufferedWriter(fw);    //å°†ç¼“å†²å¯¹æ–‡ä»¶çš„è¾“å‡º
          //grid emissions write to gridEms.txt
-         FileWriter gridWriter = new FileWriter("e:/outputs/gridEms.txt");//´´½¨FileWriter¶ÔÏó£¬ÓÃÀ´Ğ´Èë×Ö·ûÁ÷
-         BufferedWriter bgw = new BufferedWriter(gridWriter);    //½«»º³å¶ÔÎÄ¼şµÄÊä³ö
+         FileWriter gridWriter = new FileWriter("e:/outputs/gridEms.txt");//åˆ›å»ºFileWriterå¯¹è±¡ï¼Œç”¨æ¥å†™å…¥å­—ç¬¦æµ
+         BufferedWriter bgw = new BufferedWriter(gridWriter);    //å°†ç¼“å†²å¯¹æ–‡ä»¶çš„è¾“å‡º
 		
          Double double1 = 123456789.123456789;  
-         DecimalFormat decimalFormat = new DecimalFormat("###0");//¸ñÊ½»¯ÉèÖÃ  
+         DecimalFormat decimalFormat = new DecimalFormat("###0");//æ ¼å¼åŒ–è®¾ç½®  
          System.out.println("formated:  "+decimalFormat.format(double1));  
          System.out.println(double1); 
          
@@ -93,7 +93,7 @@ public class ShipEmissionMain {
 		//client.close();
 		aisRcd = hqlQuery(hql);
 		
-		// ÓÃ DP algorithm Ñ¹ËõÊı¾İ
+		// ç”¨ DP algorithm å‹ç¼©æ•°æ®
 		ArrayList<GeoPoint> shape = new ArrayList<GeoPoint>();
 		ArrayList<GeoPoint> newShape = new ArrayList<GeoPoint>();
 		List<String> point = new ArrayList<String>();
@@ -106,20 +106,20 @@ public class ShipEmissionMain {
 		
 		System.out.println("newshape size **********************: "+newShape.size());
 		
-		//¶ÔÀûµÀ¸ñÀ­Ë¹Ëã·¨Ñ¹ËõºóµÄ¹ì¼£½øĞĞ´¦Àí
+		//å¯¹åˆ©é“æ ¼æ‹‰æ–¯ç®—æ³•å‹ç¼©åçš„è½¨è¿¹è¿›è¡Œå¤„ç†
 	    //newShape=shape;//only for test
 	    GeoPoint endPoint =null;
 	    GeoPoint startPoint=newShape.get(0);
 		for (int i = 1; i < newShape.size(); i++) {
 			endPoint = newShape.get(i);
 			GeoLine line=new GeoLine(startPoint,endPoint,ship);
-			//if(line.distance()>=0.01&&line.avgSpeed()>=0.5){//Êµ¼ÊÉÏÉ¾³ıÁËÓëÇ°Ò»µã¾àÀëĞ¡ÓÚ18.52Ã×ºÍÆ½¾ùËÙ¶ÈĞ¡ÓÚ0.1µÄµã,¼´¾²Ö¹µÄµã
+			//if(line.distance()>=0.01&&line.avgSpeed()>=0.5){//å®é™…ä¸Šåˆ é™¤äº†ä¸å‰ä¸€ç‚¹è·ç¦»å°äº18.52ç±³å’Œå¹³å‡é€Ÿåº¦å°äº0.1çš„ç‚¹,å³é™æ­¢çš„ç‚¹
 			
-			// ½«previous record µÄÖµ¸ÄÎªµ±Ç°¼ÇÂ¼Öµ,Ë³Ğò²»ÄÜ¸Ä±ä
+			// å°†previous record çš„å€¼æ”¹ä¸ºå½“å‰è®°å½•å€¼,é¡ºåºä¸èƒ½æ”¹å˜
 			
             gridIds=line.getGridIds();
-            emissions=line.co2Emission();//µ¥¸ö·Ö¶ÎµÄÅÅ·Å
-            shipTotalEms=shipTotalEms+emissions; //ËùÓĞ¹ì¼£·Ö¶ÎÅÅ·ÅÖ®ºÍ
+            emissions=line.co2Emission();//å•ä¸ªåˆ†æ®µçš„æ’æ”¾
+            shipTotalEms=shipTotalEms+emissions; //æ‰€æœ‰è½¨è¿¹åˆ†æ®µæ’æ”¾ä¹‹å’Œ
 		
            // System.out.println("dateStr:"+longStrToDateStr(startPoint.timestamp)+"  shipTotalEms:"+shipTotalEms);
             //save to a file for R program to access, columns are separated by "@"
@@ -136,7 +136,7 @@ public class ShipEmissionMain {
 		}
 	
 		client.close();
-		bw.flush();    //Ë¢ĞÂ¸ÃÁ÷µÄ»º³å
+		bw.flush();    //åˆ·æ–°è¯¥æµçš„ç¼“å†²
         bw.close();
         fw.close();
 			
@@ -161,13 +161,13 @@ public class ShipEmissionMain {
 		
 		List<Ship> records = new ArrayList<Ship>();
 		String querySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from shipview where mmsi is not null and powerkw >0 and type_en is not null and type_en='container'";
-		conn = getConnection(); // Í¬ÑùÏÈÒª»ñÈ¡Á¬½Ó£¬¼´Á¬½Óµ½Êı¾İ¿â
+		conn = getConnection(); // åŒæ ·å…ˆè¦è·å–è¿æ¥ï¼Œå³è¿æ¥åˆ°æ•°æ®åº“
 		try {
-			st = conn.createStatement(); // ´´½¨ÓÃÓÚÖ´ĞĞ¾²Ì¬sqlÓï¾äµÄStatement¶ÔÏó£¬stÊô¾Ö²¿±äÁ¿
-			rs = st.executeQuery(querySql); // Ö´ĞĞsql²éÑ¯Óï¾ä£¬·µ»Ø²éÑ¯Êı¾İµÄ½á¹û¼¯
-			while (rs.next()) { // ÅĞ¶ÏÊÇ·ñ»¹ÓĞÏÂÒ»¸öÊı¾İ
+			st = conn.createStatement(); // åˆ›å»ºç”¨äºæ‰§è¡Œé™æ€sqlè¯­å¥çš„Statementå¯¹è±¡ï¼Œstå±å±€éƒ¨å˜é‡
+			rs = st.executeQuery(querySql); // æ‰§è¡ŒsqlæŸ¥è¯¢è¯­å¥ï¼Œè¿”å›æŸ¥è¯¢æ•°æ®çš„ç»“æœé›†
+			while (rs.next()) { // åˆ¤æ–­æ˜¯å¦è¿˜æœ‰ä¸‹ä¸€ä¸ªæ•°æ®
 
-				// ¸ù¾İ×Ö¶ÎÃû»ñÈ¡ÏàÓ¦µÄÖµ
+				// æ ¹æ®å­—æ®µåè·å–ç›¸åº”çš„å€¼
 			    Ship ship = new Ship();
 				ship.setMMSI(rs.getString("mmsi"));
 				ship.setDesignSpeed(Double.parseDouble(rs.getString("speed")));
@@ -179,7 +179,7 @@ public class ShipEmissionMain {
 			
 			conn.close();
 		} catch (SQLException e) {
-			System.out.println("²éÑ¯Êı¾İÊ§°Ü" + e.getMessage());
+			System.out.println("æŸ¥è¯¢æ•°æ®å¤±è´¥" + e.getMessage());
 		}
 	
 		return records;
@@ -188,29 +188,29 @@ public class ShipEmissionMain {
 
 	public static Connection getConnection() {
 
-		Connection con = null; // ´´½¨ÓÃÓÚÁ¬½ÓÊı¾İ¿âµÄConnection¶ÔÏó
+		Connection con = null; // åˆ›å»ºç”¨äºè¿æ¥æ•°æ®åº“çš„Connectionå¯¹è±¡
 		try {
-			Class.forName("com.mysql.jdbc.Driver");// ¼ÓÔØMysqlÊı¾İÇı¶¯
+			Class.forName("com.mysql.jdbc.Driver");// åŠ è½½Mysqlæ•°æ®é©±åŠ¨
 
 			con = DriverManager.getConnection(
 					"jdbc:mysql://192.168.9.202:3306/boloomodb", "root",
-					"wE32v1Zqy");// ´´½¨Êı¾İÁ¬½Ó
+					"wE32v1Zqy");// åˆ›å»ºæ•°æ®è¿æ¥
 
 		} catch (Exception e) {
-			System.out.println("Êı¾İ¿âÁ¬½ÓÊ§°Ü" + e.getMessage());
+			System.out.println("æ•°æ®åº“è¿æ¥å¤±è´¥" + e.getMessage());
 		}
 
-		return con; // ·µ»ØËù½¨Á¢µÄÊı¾İ¿âÁ¬½Ó
+		return con; // è¿”å›æ‰€å»ºç«‹çš„æ•°æ®åº“è¿æ¥
 
 	}
 
 	
 
-	// ¼ÆËãÁ½µãÁ¬Ïß¿çÔ½¼¸¸öµ¥Ôª£¬²¢¼ÆËãÔÚÃ¿¸öµ¥ÔªËùÓÃµÄÊ±¼ä£¬ËÙ¶È¶¼ÎªÆ½¾ùËÙ¶È¡£Ã¿¸öµ¥Ôª·ÖÅäµÄÊ±¼ä»òÕßÅÅ·ÅÎªÎªµ¥ÔªÖĞÏß¶Î³¤¶È³É±ÈÀı¡£
+	// è®¡ç®—ä¸¤ç‚¹è¿çº¿è·¨è¶Šå‡ ä¸ªå•å…ƒï¼Œå¹¶è®¡ç®—åœ¨æ¯ä¸ªå•å…ƒæ‰€ç”¨çš„æ—¶é—´ï¼Œé€Ÿåº¦éƒ½ä¸ºå¹³å‡é€Ÿåº¦ã€‚æ¯ä¸ªå•å…ƒåˆ†é…çš„æ—¶é—´æˆ–è€…æ’æ”¾ä¸ºä¸ºå•å…ƒä¸­çº¿æ®µé•¿åº¦æˆæ¯”ä¾‹ã€‚
 public static String setGrid(double cLon, double cLat, double pLon,double pLat) {
-		// ¼ÙÉèÃ¿¸öµ¥Ôª³ß´çÎª0.1X0.1¶È£¬ÆäÖĞ¾­¶È360¶È£¬Î³¶È180¶È£¬¹Ê×Ü¹²½«µØÇò·Ö¸îÎª1800X3600¸öµ¥Ôª¡£
-		// ÕâÀïµÄµ¥Ôª¸ñgridIdsÎªµ¥¸ögridId×Ö·û´ÜµÄºÏ³É£¬ÆäÖĞµ¥¸ögridIdÓÉ@·Ö¿ª¡£µ¥¸ögridIdÎªgrid ×óÏÂ½ÇµãµÄ
-		// lat*10_lon*10_¸Ã¶ÎÔÚ¸ÃgridÖĞ³¤¶ÈÕ¼µÄ±ÈÀı
+		// å‡è®¾æ¯ä¸ªå•å…ƒå°ºå¯¸ä¸º0.1X0.1åº¦ï¼Œå…¶ä¸­ç»åº¦360åº¦ï¼Œçº¬åº¦180åº¦ï¼Œæ•…æ€»å…±å°†åœ°çƒåˆ†å‰²ä¸º1800X3600ä¸ªå•å…ƒã€‚
+		// è¿™é‡Œçš„å•å…ƒæ ¼gridIdsä¸ºå•ä¸ªgridIdå­—ç¬¦çªœçš„åˆæˆï¼Œå…¶ä¸­å•ä¸ªgridIdç”±@åˆ†å¼€ã€‚å•ä¸ªgridIdä¸ºgrid å·¦ä¸‹è§’ç‚¹çš„
+		// lat*10_lon*10_è¯¥æ®µåœ¨è¯¥gridä¸­é•¿åº¦å çš„æ¯”ä¾‹
 		
 		String gridIds = "";
 		
@@ -221,23 +221,23 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 		int pLonFloor = (int) Math.floor(pLon * enlarge);
 
 		int latSpan = (int) Math.floor(cLat * enlarge)
-				- (int) Math.floor(pLat * enlarge);//Î¬¶È·½Ïò¿ç¼¸¸öµ¥Ôª¸ñ
+				- (int) Math.floor(pLat * enlarge);//ç»´åº¦æ–¹å‘è·¨å‡ ä¸ªå•å…ƒæ ¼
 		int lonSpan = (int) Math.floor(cLon * enlarge)
-				- (int) Math.floor(pLon * enlarge);//¾­¶È·½Ïò¿ç¼¸¸öµ¥Ôª¸ñ
-		double percent = 0;// º½¶ÎÔÚgridÖĞµÄ±ÈÀı
+				- (int) Math.floor(pLon * enlarge);//ç»åº¦æ–¹å‘è·¨å‡ ä¸ªå•å…ƒæ ¼
+		double percent = 0;// èˆªæ®µåœ¨gridä¸­çš„æ¯”ä¾‹
 
 		System.out.println("lonspan: " + lonSpan + "   latspan: " + latSpan
 				+ "   point_lat:" + Math.floor(cLat * enlarge) + "   point_lon:"
 				+ Math.floor(cLon * enlarge));
 
-		// ÓÃÁ½µãÇóÖ±Ïß·½³Ì
-		if (cLon == pLon) {//Óë½ø¶ÈÍ¬·½Ïò£¬¼´´¹Ö±³àµÀ·½Ïò
+		// ç”¨ä¸¤ç‚¹æ±‚ç›´çº¿æ–¹ç¨‹
+		if (cLon == pLon) {//ä¸è¿›åº¦åŒæ–¹å‘ï¼Œå³å‚ç›´èµ¤é“æ–¹å‘
 
 			if (Math.abs(latSpan) > 0) {
 
 				for (int i = 0; i <= Math.abs(latSpan); i++) {
 
-					// ÇóÃ¿¸ögridÕ¼µÄ°Ù·Ö±È
+					// æ±‚æ¯ä¸ªgridå çš„ç™¾åˆ†æ¯”
 					if (i == 0) {
 						percent = (Math.min(cLatFloor, pLatFloor) + 1 - Math
 								.min(cLat, pLat) * enlarge)
@@ -249,7 +249,7 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 					} else {
 						percent = 1 / (Math.abs(cLat - pLat) * enlarge);
 					}
-					// gridIdsµÄ×Ö·û´Ü
+					// gridIdsçš„å­—ç¬¦çªœ
 					gridIds = gridIds + "@" + cLonFloor + "_"
 							+ (Math.min(cLatFloor, pLatFloor) + i) + "_"
 							+ percent;
@@ -316,7 +316,7 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 		return gridIds;
 
 	}
-// È¡³öÒ»Ìõ´¬²°×¢²á¼ÇÂ¼
+// å–å‡ºä¸€æ¡èˆ¹èˆ¶æ³¨å†Œè®°å½•
 	public static HqlResult2 hqlQuery(String hql) throws TTransportException, TException,
 			ClientException {
 
@@ -356,7 +356,7 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 		
 		
 		
-		//µ±table ²»´æÔÚÊ±£¬³ÌĞò×Ô¶¯ĞÂ½¨table¡£µ«²»½¨Òé²ÉÓÃÕâÖÖ·½Ê½£¬¿ÉÒÔÖ±½ÓÓÃht shellĞÂ½¨¡£
+		//å½“table ä¸å­˜åœ¨æ—¶ï¼Œç¨‹åºè‡ªåŠ¨æ–°å»ºtableã€‚ä½†ä¸å»ºè®®é‡‡ç”¨è¿™ç§æ–¹å¼ï¼Œå¯ä»¥ç›´æ¥ç”¨ht shellæ–°å»ºã€‚
 		if(client.exists_table(ns, "ais")==false){
 			// create table:create table ais(ais MAX_VERSIONS=1,ACCESS GROUP default(ais));
 			client.create_table(ns, "ais", tableSchema);
@@ -365,13 +365,13 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 		client.hql_exec2(ns, insertHql, false, false);		
 	}
 	
-	//½«timestampÓÉlongÀàĞÍ×ª»»³ÉDateÀàĞÍ
+	//å°†timestampç”±longç±»å‹è½¬æ¢æˆDateç±»å‹
 	public static String longStrToDateStr(long timestamp){
 		
 		SimpleDateFormat sdf= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		//Ç°ÃæµÄlSysTimeÊÇÃëÊı£¬ÏÈ³Ë1000µÃµ½ºÁÃëÊı£¬ÔÙ×ªÎªjava.util.DateÀàĞÍ
+		//å‰é¢çš„lSysTimeæ˜¯ç§’æ•°ï¼Œå…ˆä¹˜1000å¾—åˆ°æ¯«ç§’æ•°ï¼Œå†è½¬ä¸ºjava.util.Dateç±»å‹
 		java.util.Date dt = new java.util.Date(timestamp * 1000); 
-		String sDateTime = sdf.format(dt);  //µÃµ½¾«È·µ½ÃëµÄ±íÊ¾£º08/31/2006 21:08:00
+		String sDateTime = sdf.format(dt);  //å¾—åˆ°ç²¾ç¡®åˆ°ç§’çš„è¡¨ç¤ºï¼š08/31/2006 21:08:00
 		//System.out.println(sDateTime);
 		return sDateTime;
 		
@@ -379,9 +379,9 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 
 	public static List<String> extractAIS(List<String> record) {
 
-		// reportÖĞ×Ö·û´®¶ÔÓ¦µÄÎ»ÖÃ
+		// reportä¸­å­—ç¬¦ä¸²å¯¹åº”çš„ä½ç½®
 		// 0,mmsi;1,timestamp;2,nav_status;3,rot;4,sog;5,pos_acc;6,lon;7,lat;
-		// 8,cog;9,true_head;10,eta;11,dest_id;12,dest£»13,src_id;14,dist_to_port;15,blm_avg_speed
+		// 8,cog;9,true_head;10,eta;11,dest_id;12,destï¼›13,src_id;14,dist_to_port;15,blm_avg_speed
 
 		List<String> report = new ArrayList<String>();
 

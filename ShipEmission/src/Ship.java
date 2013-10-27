@@ -55,7 +55,4 @@ public class Ship {
 		return this.type;
 	}
 	
-	
-	
-
 }

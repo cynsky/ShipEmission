@@ -1,3 +1,8 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,25 +23,30 @@ import org.hypertable.thriftgen.HqlResult2;
 
 public class MMSIList {
 
-
 	/**
 	 * @param args
 	 */
 	
 	static HqlResult2 aisRcd; // AIS records from hypertable
-	static String hql = "select * from t41_ais_history where '2013-01-01' > TIMESTAMP > '2012-01-01' limit 1000";
-	
+	static String querySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from shipview "
+			+ "where mmsi is not null and powerkw >0 and type_en is not null and type_en='container'";
 	public static void main(String[] args) throws TTransportException, TException, ClientException {
 		// TODO Auto-generated method stub
+		
+		List <Ship> ships =queryShips(querySql);
+		Ship ship=ships.get(500);
+		String hql = "select * from t41_ais_history where row=^" + "'"
+				+ ship.getMMSI() + "'"
+				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 		int count = 0;
-		
+		System.out.println("ship mmsi **********************: "+ship.getMMSI()+ "number of ships: " +ships.size());
 		aisRcd=hqlQuery(hql);
-		count=aisRcd.cells.size();
-		
-		
-	
+		count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
+		System.out.println("count:*******"+count);
 
 	}
+	
+	//get ais messages from hypertable
 	
 	public static HqlResult2 hqlQuery(String hql) throws TTransportException, TException,
 	ClientException {
@@ -49,13 +59,11 @@ public class MMSIList {
         return ais;
 	}
 	
+	//extract a single ais messages 
 	static List<String> extractAIS(List<String> record) {
-
 		// 0,mmsi;1,timestamp;2,nav_status;3,rot;4,sog;5,pos_acc;6,lon;7,lat;
 		// 8,cog;9,true_head;10,eta;11,dest_id;12,dest��13,src_id;14,dist_to_port;15,blm_avg_speed
-
 		List<String> report = new ArrayList<String>();
-
 		String[] key = record.get(0).split(" ");
 		String[] value = record.get(3).split("@");
 		// add key strings to report
@@ -68,9 +76,64 @@ public class MMSIList {
 		}
 		return report;
 	}
-        
+
+	//get ships from mysql 
+	
+	public static List<Ship> queryShips(String sql) {
+		/**
+		 * SELECT * FROM shipview WHERE mmsi IS NOT NULL;
+           DROP VIEW shipview;
+           CREATE VIEW shipview AS 
+           SELECT ship.shipid shipid,ship.mmsi mmsi,ship.IMO imo,ship.CALLSIGN,ship.speed speed,eng.powerkw powerkw,ton.dwt dwt,tp.key1 typecode,tp.desc_en type_en,tp.desc_cn type_cn,
+           ship.name shipname,ship.localname localname,ship.country_code country,ship.built built_date,ship.owner ship_owner,
+           ton.grosston grosston, ton.netton netton,eng.builder builder,eng.number number,eng.rpm rpm,eng.stroke stroke,
+           dim.loa max_length, dim.maxbeam beam, dim.draft draft
+           FROM t41_ship ship INNER JOIN t41_ship_engine eng ON ship.shipid=eng.shipid INNER JOIN t41_ship_tonnage ton ON ship.shipid=ton.shipid 
+           INNER JOIN t41_ship_dimension dim ON ship.shipid=dim.shipid INNER JOIN t91_code tp ON ship.shiptype_key=tp.key1 WHERE dwt>=100 AND speed>0;
+		 */	
+		ResultSet rs;
+	    Connection conn;
+		Statement st;
+		List<Ship> records = new ArrayList<Ship>();
+		conn = getConnection(); // 同样先要获取连接，即连接到数据库
+		try {
+			st = conn.createStatement(); // 创建用于执行静态sql语句的Statement对象，st属局部变量
+			rs = st.executeQuery(sql); // 执行sql查询语句，返回查询数据的结果集
+			while (rs.next()) { // 判断是否还有下一个数据
+				// 根据字段名获取相应的值
+			    Ship ship = new Ship();
+				ship.setMMSI(rs.getString("mmsi"));
+				ship.setDesignSpeed(Double.parseDouble(rs.getString("speed")));
+				ship.setDWT(Integer.parseInt(rs.getString("dwt")));
+				ship.setPowerKw(Integer.parseInt(rs.getString("powerkw")));
+				ship.setType(rs.getString("type_en"));
+				records.add(ship);
+			}			
+			conn.close();
+		} catch (SQLException e) {
+			System.out.println("查询数据失败" + e.getMessage());
+		}	
+		return records;
+	}
+
+	public static Connection getConnection() {
+		Connection con = null; // 创建用于连接数据库的Connection对象
+		try {
+			Class.forName("com.mysql.jdbc.Driver");// 加载Mysql数据驱动
+			con = DriverManager.getConnection(
+					"jdbc:mysql://192.168.9.202:3306/boloomodb", "root",
+					"wE32v1Zqy");// 创建数据连接
+		} catch (Exception e) {
+			System.out.println("数据库连接失败" + e.getMessage());
+		}
+		return con; // 返回所建立的数据库连接
+	}
 
 }
+
+
+
+
 		
 	
 	
