@@ -397,5 +397,6 @@ public static String setGrid(double cLon, double cLat, double pLon,double pLat) 
 		}
 		return report;
 	}
+	
 }
 

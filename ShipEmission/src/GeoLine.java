@@ -13,7 +13,7 @@ public class GeoLine {
 	private double speed;
 	private double spanTime;
 	private double distance;
-	static DecimalFormat ft = new DecimalFormat("###0.0");//¸ñÊ½»¯ÉèÖÃdouble 123.123½«±äÎª 123 
+	static DecimalFormat ft = new DecimalFormat("###0.0");//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½double 123.123ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 123 
 
 	public GeoLine(GeoPoint start, GeoPoint end, Ship ship) {
 		this.startPoint = start;
@@ -46,8 +46,8 @@ public class GeoLine {
 
 	public double distance() {
 		// double PI = Math.PI;
-		// double R = 6378137; // µØÇò°ë¾¶£¬ÒÔÃ×Îªµ¥Î»
-		// // ½«¾­Î³¶È×ª»¯Îª»¡¶È
+		// double R = 6378137; // meters
+		// // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		// double cLonR = this.endPoint.lon * PI / 180;
 		// double cLatR = this.endPoint.lat * PI / 180;
 		// double pLonR = this.startPoint.lon * PI / 180;
@@ -55,96 +55,75 @@ public class GeoLine {
 		// double x = (cLonR - pLonR) * Math.cos((cLatR + pLatR) / 2);
 		// double y = cLatR - pLatR;
 		// double distance = Math.pow(Math.pow(x, 2) + Math.pow(y, 2), 0.5) * R/
-		// 1852; // µØ±íÁ½µã¼ä¾àÀë£¬ÒÔº£ÀïÎªµ¥Î»
+		// 1852; 
 		// return distance;
-		double distance = this.endPoint.distanceTo(this.startPoint) / 1852;// µ¥Î»º£Àï£¬´Ë·½·¨¼ÆËã600ÃëÒÔÉÏ
-		 															// Æ«Ð¡
-		
+		double distance = this.endPoint.distanceTo(this.startPoint) / 1852;// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½600ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		 															// ï¿½ï¿½ï¿½ï¿½
 		return distance;
 	}
 
 	public double avgSpeed() {
-		int threshhold = 600; // ÉèÖÃÆ½¾ùËÙ¶È¼ÆËã·½Ê½µÄÊ±¼äÁÙ½çµãÎª300Ãë
+		int timeTolerance = 600; // s
+		int distanceTolerance=1; //nm
 		double avg_speed = 0;
 		// compute average speed between two points
-		if (this.timeSpan() <= threshhold) {
+		if (this.timeSpan() <= timeTolerance && this.distance()<distanceTolerance) {
 			avg_speed = 0.5 * 0.1 * (this.startPoint.sog + this.endPoint.sog);
 		} else {
 
-			// ¾àÀë/Ð¡Ê±£¬º£ÀïÃ¿Ð¡Ê±Îªµ¥Î»
-			avg_speed = this.distance / this.spanTime * 3600;
+			avg_speed = this.distance() / this.spanTime * 3600;
 		}
 		return avg_speed;
 
 	}
 
-	// ÕâÀïÐèÒªÐÞ¼ÓÈëÈç SFOC 213g/kw.h
+	
 	public double co2Emission() {
-		// double emission=0;
-		// double design_speed=this.ship.getSpeed();
-		// double timeSpan=this.time/3600;//Ð¡Ê±
-		// double powerkw=this.ship.getPower();
-		// double engFactor=0.220;//aux engine power/main engine power =0.220
-		// double auxPower =powerkw*engFactor;
-		//
-		// //Ö÷»ú¼ÓÉÏ¸¨»úµÄÅÅ·Å
-		// emission=powerkw*timeSpan*this.mainLoadFactor()*this.mainEmFactor()+auxPower*timeSpan*this.auxLoadFactor()*this.auxEmFactor();
-		// //µ¥Î»ÐèÒªÈ·¶¨Ò»ÏÂ£¬¿ÉÄÜÊÇ¿Ë£¨ÕâÀïÒªÏÈÈ·¶¨ÓÃÓÍÇé¿ö£©
-		// System.out.println("design_speed: "+ design_speed +
-		// "avgSpeed: "+this.avgSpeed()+"power:"+powerkw+"sfoc:213"
-		// +"emission: "+Math.round(emission));
 		return Math.round(this.mainEmission() + this.auxEmission()
-				+ this.boilerEmission()); // Ö÷»úºÍ¸¨»úÅÅ·ÅµÄºÍ
+				+ this.boilerEmission()); 
 
 	}
 
-	// Ö÷»úÅÅ·Å
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	public double mainEmission() {
-		// ¿ËÎªµ¥Î»
+		
 		double emission = 0;
-
-		double timeSpan = this.spanTime / 3600;// Ð¡Ê±
+		double timeSpan = this.spanTime / 3600;// ï¿½ï¿½ï¿½ï¿½
 		double powerkw = this.ship.getPower();
-		// Ö÷»ú¼ÓÉÏ¸¨»úµÄÅÅ·Å
+		
 		emission = powerkw * timeSpan * this.mainLoadFactor()
 				* this.mainEmFactor();
-		// µ¥Î»ÐèÒªÈ·¶¨Ò»ÏÂ£¬¿ÉÄÜÊÇ¿Ë£¨ÕâÀïÒªÏÈÈ·¶¨ÓÃÓÍÇé¿ö£©
 
-		// System.out.println("loadfactor: "+ this.mainLoadFactor()
-		// +"distance: "+ this.distance() +" time: "+ this.spanTime+
-		// " avgSpeed: "+this.avgSpeed()+"power:"+powerkw+"sfoc:213"
-		// +"main engine emission: "+emission);
 		return Math.round(emission);
 
 	}
 
-	// ¸¨»úÅÅ·Å
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	public double auxEmission() {
-		// ¿ËÎªµ¥Î»
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		double emission = 0;
 
-		double timeSpan = this.spanTime / 3600;// Ð¡Ê±
+		double timeSpan = this.spanTime / 3600;// ï¿½ï¿½ï¿½ï¿½
 		double powerkw = this.ship.getPower();
 		double engFactor = 0.220;// aux engine power/main engine power =0.220
 		double auxPower = powerkw * engFactor;
 
-		// Ö÷»ú¼ÓÉÏ¸¨»úµÄÅÅ·Å
+		
 		emission = auxPower * timeSpan * this.auxLoadFactor()
 				* this.auxEmFactor();
-		// µ¥Î»ÐèÒªÈ·¶¨Ò»ÏÂ£¬¿ÉÄÜÊÇ¿Ë£¨ÕâÀïÒªÏÈÈ·¶¨ÓÃÓÍÇé¿ö£©
 
 		return Math.round(emission);
 
 	}
 
 	public double boilerEmission() {
-		// ¿ËÎªµ¥Î»
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		double eFactor = 922.97;
 
-		double timeSpan = this.spanTime / 3600;// Ð¡Ê±
+		double timeSpan = this.spanTime / 3600;// ï¿½ï¿½ï¿½ï¿½
 		int boilerEnergy = 506;
 		double emission = 0;
-		// Ö»ÓÐÔÚmaveuring ºÍ hotellingÁ½ÖÖ×´Ì¬ÏÂBoiler²Å¹¤×÷¡£
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½maveuring ï¿½ï¿½ hotellingï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Boilerï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		if (this.speed < 8) {
 
 			emission = boilerEnergy * timeSpan * eFactor;
@@ -158,17 +137,17 @@ public class GeoLine {
 	public double fuelConsumption() {
 		// assume:type:container, oil:RO
 		double fuel = 0;
-		// double SFOC= 213;// ¼ÙÉèÎªÖØÓÍHFO(RO), SFOC=213g/kw.h
+		// double SFOC= 213;// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½HFO(RO), SFOC=213g/kw.h
 		double design_speed = this.ship.getSpeed();
-		double timeSpan = this.spanTime / 3600;// Ð¡Ê±
+		double timeSpan = this.spanTime / 3600;// ï¿½ï¿½ï¿½ï¿½
 		double powerkw = this.ship.getPower();
 		double engFactor = 0.220;// aux engine power/main engine power =0.220
 		double auxPower = powerkw * engFactor;
 
-		// Ö÷»ú¼ÓÉÏ¸¨»úµÄÅÅ·Å
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		fuel = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC()
 				+ auxPower * timeSpan * this.auxLoadFactor() * this.auxBSFC();
-		// µ¥Î»ÐèÒªÈ·¶¨Ò»ÏÂ£¬¿ÉÄÜÊÇ¿Ë£¨ÕâÀïÒªÏÈÈ·¶¨ÓÃÓÍÇé¿ö£©
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		System.out.println("design_speed: " + design_speed + "avgSpeed: "
 				+ this.avgSpeed() + "power:" + powerkw + "sfoc:213"
 				+ "fuel consumption: " + Math.round(fuel));
@@ -177,16 +156,16 @@ public class GeoLine {
 	}
 
 	public String getGridIds() {
-		// ¼ÙÉèÃ¿¸öµ¥Ôª³ß´çÎª0.1X0.1¶È£¬ÆäÖÐ¾­¶È360¶È£¬Î³¶È180¶È£¬¹Ê×Ü¹²½«µØÇò·Ö¸îÎª1800X3600¸öµ¥Ôª¡£
-		// ÕâÀïµÄµ¥Ôª¸ñgridIdsÎªµ¥¸ögridId×Ö·û´ÜµÄºÏ³É£¬ÆäÖÐµ¥¸ögridIdÓÉ@·Ö¿ª¡£µ¥¸ögridIdÎªgrid ×óÏÂ½ÇµãµÄ
-		// lat*10_lon*10_¸Ã¶ÎÔÚ¸ÃgridÖÐ³¤¶ÈÕ¼µÄ±ÈÀý
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0.1X0.1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½360ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½180ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1800X3600ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridIdsï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridIdï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridIdï¿½ï¿½@ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridIdï¿½ï¿½grid ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		// lat*10_lon*10_ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		double cLat = this.endPoint.lat; // clat =current lat
 		double cLon = this.endPoint.lon;
 		double pLat = this.startPoint.lat;
 		double pLon = this.startPoint.lon;
 
 		String gridIds = "";
-		int enlarge = 100; // µØÍ¼·Ö±æÂÊ¿ØÖÆ²ÎÊý£¬µ±ÆäÖµÇú100Ê± Ã¿¸öµ¥Ôª¸ñ´óÐ¡Îª0.01X0.01¶È£¬Èç¹ûÊÇ10 Ôò
+		int enlarge = 10; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½100ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0.01X0.01ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½10 ï¿½ï¿½
 							// 0.1X0.1
 
 		int cLatFloor = (int) Math.floor(cLat * enlarge);
@@ -195,36 +174,36 @@ public class GeoLine {
 		int pLonFloor = (int) Math.floor(pLon * enlarge);
 
 		int latSpan = (int) Math.floor(cLat * enlarge)
-				- (int) Math.floor(pLat * enlarge);// Î¬¶È·½Ïò¿ç¼¸¸öµ¥Ôª¸ñ(+1 ²Å¶Ô£©
+				- (int) Math.floor(pLat * enlarge);// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(+1 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		int lonSpan = (int) Math.floor(cLon * enlarge)
-				- (int) Math.floor(pLon * enlarge);// ¾­¶È·½Ïò¿ç¼¸¸öµ¥Ôª¸ñ(+1 ²Å¶Ô£©
-		double percent = 0;// º½¶ÎÔÚgridÖÐµÄ±ÈÀý
+				- (int) Math.floor(pLon * enlarge);// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(+1 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		double percent = 0;// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 		// System.out.println("lonspan: " + lonSpan + "   latspan: " + latSpan
 		// + "   point_lat:" + Math.floor(cLat * enlarge) + "   point_lon:"
 		// + Math.floor(cLon * enlarge));
 
-		// ÓÃÁ½µãÇóÖ±Ïß·½³Ì
-		if (cLon == pLon) {// Óë½ø¶ÈÍ¬·½Ïò£¬¼´´¹Ö±³àµÀ·½Ïò
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		if (cLon == pLon) {// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-			if (Math.abs(latSpan) > 0) {// ²»ÔÚÍ¬Ò»¸öµ¥Ôª¸ñÄÚ
+			if (Math.abs(latSpan) > 0) {// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 				for (int i = 0; i <= Math.abs(latSpan); i++) {
 
-					// ÇóÃ¿¸ögridÕ¼µÄ°Ù·Ö±È,ÆäÖÐi±íÊ¾µÚi¸öµ¥Ôª¸ñ£¬i´Ó0¿ªÊ¼£¬µÚ0¸öÎª×îÐ¡µÄµ¥Ôª¸ñ
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					if (i == 0) {
 						percent = (Math.min(cLatFloor, pLatFloor) + 1 - Math
 								.min(cLat, pLat) * enlarge)
 								/ (Math.abs(cLat - pLat) * enlarge);
 					} else if (i == Math.abs(latSpan)) {
 						percent = (Math.max(cLat, pLat) * enlarge - (Math.min(
-								cLatFloor, pLatFloor) + i))// Ò²¿ÉÒÔÊÇMath.max(cLatFloor,
+								cLatFloor, pLatFloor) + i))// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Math.max(cLatFloor,
 															// pLatFloor)
 								/ (Math.abs(cLat - pLat) * enlarge);
 					} else {
 						percent = 1 / (Math.abs(cLat - pLat) * enlarge);
 					}
-					// gridIdsµÄ×Ö·û´Ü
+					// gridIdsï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					gridIds = gridIds + "@" + cLonFloor + "_"
 							+ (Math.min(cLatFloor, pLatFloor) + i) + " "
 							+ percent;
@@ -241,14 +220,14 @@ public class GeoLine {
 			double b = cLat * enlarge - k * cLon * enlarge;
 			// double x = 0;
 			// double y=k*x+b;
-			double[] lats = new double[Math.abs(latSpan) + 1];// Î¬¶È·½Ïò¿çµ¥Ôª¸ñ¸öÊý
-			double[] lons = new double[Math.abs(lonSpan) + 1];// ¾­¶È·½Ïò
+			double[] lats = new double[Math.abs(latSpan) + 1];// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			double[] lons = new double[Math.abs(lonSpan) + 1];// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			double[] y_lats = new double[Math.abs(lonSpan) + 1];// ?
 			double[] x_lons = new double[Math.abs(latSpan) + 1];// ?
 			double[] point_lons = new double[Math.abs(latSpan)
-					+ Math.abs(lonSpan) + 2]; // Í¶Ó°µ½Î¬¶ÈÖáÉÏµÄµãµÄ¸öÊý£¬Á½¸ö¶Ëµã¼ÓÉÏÓëÍø¸ñµÄ½»µã£¬ÏàÁÚÁ½µã¿Ï¶¨ÔÚÒ»¸ögridÖÐ
+					+ Math.abs(lonSpan) + 2]; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridï¿½ï¿½
 
-			point_lons[0] = Math.min(cLon * enlarge, pLon * enlarge);// µÚ0¸öµãÔÚlonÉÏµÄÍ¶Ó°£¬»òÕßÊÇlon×ø±ê
+			point_lons[0] = Math.min(cLon * enlarge, pLon * enlarge);// ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½lonï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½lonï¿½ï¿½ï¿½ï¿½
 			point_lons[Math.abs(latSpan) + Math.abs(lonSpan) + 1] = Math.max(
 					cLon * enlarge, pLon * enlarge);
 
@@ -257,7 +236,7 @@ public class GeoLine {
 				for (int j = 1; j <= Math.abs(latSpan); j++) {
 					lats[j] = Math.min(cLatFloor, pLatFloor) + j;
 					x_lons[j] = (lats[j] - b) / k;
-					point_lons[j] = x_lons[j];// µÚj¸öµãlon×ø±ê
+					point_lons[j] = x_lons[j];// ï¿½ï¿½jï¿½ï¿½ï¿½ï¿½lonï¿½ï¿½ï¿½ï¿½
 
 				}
 			}
@@ -280,15 +259,15 @@ public class GeoLine {
 			// create gridIds
 			for (int j = 0; j < point_lons.length - 1; j++) {
 
-				midPointLon = 0.5 * (point_lons[j] + point_lons[j + 1]);// ÏàÁÚÁ½¸öµãµÄÖÐµãÓÃÀ´¼ÆËãgridId
+				midPointLon = 0.5 * (point_lons[j] + point_lons[j + 1]);// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridId
 				midPointLat = k * midPointLon + b;
 				pcent = Math.abs((point_lons[j + 1] - point_lons[j])
 						/ (point_lons[point_lons.length - 1] - point_lons[0]));
 
 				gridIds = gridIds + "@" + (int) Math.floor(midPointLon) + "_"
-						+ (int) Math.floor(midPointLat) + " " // ÓÃ¿Õ¸ñ½«gridId Óë
+						+ (int) Math.floor(midPointLat) + " " // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½gridId ï¿½ï¿½
 																// emission
-																// percent ·Ö¿ª
+																// percent ï¿½ï¿½ï¿½ï¿½
 						+ pcent;
 
 			}
@@ -306,14 +285,14 @@ public class GeoLine {
 
 		double factor = 0.0;
 		double load = Math.pow(this.avgSpeed() / this.ship.getSpeed(), 3);
-		if (load < 0.02 && this.speed >= 1) { // ¸ù¾ÝICF 2009£¬ ×îÐ¡load factor Îª0.02
+		if (load < 0.02 && this.speed >= 1) { // ï¿½ï¿½ï¿½ï¿½ICF 2009ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½load factor ï¿½ï¿½0.02
 			factor = 0.02;
 
 		} else {
 			factor = load;
 
 		}
-		// µ±ÔØºÉÐ¡ÓÚ20%Ê±£¬ÐèÒª³ËÒÔÒ»¸öµ÷ÕûÏµÊý£¬µ÷ÕûÏµÊý¼ûICFÎÄÕÂpage 43
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½20%ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ICFï¿½ï¿½ï¿½ï¿½page 43
 		if (factor < 0.2 && factor > 0.01) {
 			factor = factor * ((44.1 / factor + 648.6) / (44.1 / 0.2 + 648.6));
 		}
@@ -344,35 +323,29 @@ public class GeoLine {
 	}
 
 	public double mainEmFactor() {
-		// ¼ÙÉèÊ¹ÓÃÊ¹ÓÃÈ¼ÓÍÎªRO£¬ÔòÖ÷»úemission factor=677.91 g/kw.h£¬BSFC=213g/kw.h
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ROï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½emission factor=677.91 g/kw.hï¿½ï¿½BSFC=213g/kw.h
 		double EF = 677.91;
 		return EF;
 
 	}
 
 	public double auxEmFactor() {
-		// ¼ÙÉèÊ¹ÓÃÊ¹ÓÃÈ¼ÓÍÎªRO£¬ÔòÖ÷»úemission factor=722.54 g/kw.h£¬BSFC=227g/kw.h
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ROï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½emission factor=722.54 g/kw.hï¿½ï¿½BSFC=227g/kw.h
 		double F = 227;
 		return F;
 
 	}
 
 	public double mainBSFC() {
-		// ¼ÙÉèÊ¹ÓÃÊ¹ÓÃÈ¼ÓÍÎªRO£¬ÔòÖ÷»úemission factor=677.91 g/kw.h£¬BSFC=213g/kw.h
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ROï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½emission factor=677.91 g/kw.hï¿½ï¿½BSFC=213g/kw.h
 		double F = 213;
-		double factor = Math.pow(this.avgSpeed() / this.ship.getSpeed(), 3);
-		// µ±ÔØºÉÐ¡ÓÚ20%Ê±£¬ÐèÒª³ËÒÔÒ»¸öµ÷ÕûÏµÊý£¬µ÷ÕûÏµÊý¼ûICFÎÄÕÂpage 43
-		if (factor < 0.2 && factor > 0.01) {
-			factor = factor
-					* ((14.1205 / factor + 205.7169) / (14.1205 / 0.2 + 205.7169));
-		}
-
+		
 		return F;
 
 	}
 
 	public double auxBSFC() {
-		// ¼ÙÉèÊ¹ÓÃÊ¹ÓÃÈ¼ÓÍÎªRO£¬ÔòÖ÷»úemission factor=722.54 g/kw.h£¬BSFC=227g/kw.h
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ROï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½emission factor=722.54 g/kw.hï¿½ï¿½BSFC=227g/kw.h
 
 		double EF = 227.54;
 		return EF;
@@ -384,20 +357,28 @@ public class GeoLine {
 	public void saveToFile(BufferedWriter bw) {
 
 		try {
-            //mmsi+timestamp(s)+sog/10(nm/h)+start lat(¶È)+start lon + end lat +end lon+distance(meters)+avgspeed(nm/h)
+            //mmsi+timestamp(s)+sog/10(nm/h)+start lat(ï¿½ï¿½)+start lon + end lat +end lon+distance(meters)+avgspeed(nm/h)
 			//+spantime(s)+main eng emission(g)+ aux emission(g)+bioler emission(g)+ total emission+main eng load factor(%)
 			String myreadline = this.startPoint.mmsi + "@"
 					+ this.startPoint.timestamp + "@"
-					+ this.startPoint.sog / 10 + "@" + this.startPoint.lat
-					+ "@" + this.startPoint.lon + "@" + this.endPoint.lat + "@"
-					+ this.endPoint.lon + "@" + ft.format(this.distance) + "@"
-					+ ft.format(this.speed) + "@" + this.spanTime + "@"
-					+ ft.format(this.mainEmission()) + "@" + ft.format(this.auxEmission())
-					+ "@" + ft.format(this.boilerEmission()) +"@" + ft.format(this.co2Emission()) + "@" + ft.format(this.mainLoadFactor()*100);
+					+ this.startPoint.sog / 10 + "@"
+					+ this.endPoint.sog / 10 + "@"
+					+ this.startPoint.lat+ "@" 
+					+ this.startPoint.lon + "@" 
+					+ this.endPoint.lat + "@"
+					+ this.endPoint.lon + "@" 
+					+ ft.format(this.distance) + "@"
+					+ ft.format(this.speed) + "@" 
+					+ this.spanTime + "@"
+					+ ft.format(this.mainEmission()) + "@" 
+					+ ft.format(this.auxEmission())+ "@" 
+					+ ft.format(this.boilerEmission()) +"@" 
+					+ ft.format(this.co2Emission()) + "@" 
+					+ ft.format(this.mainLoadFactor()*100);
 
-			bw.write(myreadline); // Ð´ÈëÎÄ¼þ
+			bw.write(myreadline); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			bw.newLine();
-			//System.out.println(myreadline);// ÔÚÆÁÄ»ÉÏÊä³ö
+			//System.out.println(myreadline);// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -409,37 +390,33 @@ public class GeoLine {
 
 		String gridIds = this.getGridIds();
 		// System.out.println("gridids: " + gridIds);
-		String[] unitEmission = gridIds.split("@");// Ò»°ã¸ñÊ½Îª@123_1212
+		String[] unitEmission = gridIds.split("@");// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½@123_1212
 													// 0.3@123_1212 0.3
-		System.out.println("*******gridIds:"+gridIds+"**************");
 		String[] gridIdEms = new String[2];
-		
 		double percent = 0;
 		String gridId = null;
-
-		for (int i = 1; i < unitEmission.length; i++) {// i=0Î»ÖÃÎª¿Õ
-
+		for (int i = 1; i < unitEmission.length; i++) {// i=0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			gridIdEms = unitEmission[i].split(" ");
 			gridId = gridIdEms[0];
 			percent = Double.parseDouble(gridIdEms[1]);
-
 			// mmsi+star timestamp(s)+end
-			// timestamp(s)+scale(·Ö±æÂÊÎª100)+gridId(lon(¶È)*100+lat*100) +
+			// timestamp(s)+scale(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½100)+gridId(lon(ï¿½ï¿½)*100+lat*100) +
 			// main eng emission(g)+ aux emission(g)+bioler
 			// emission(g)+totalEmission(g)
 			String myreadline = this.startPoint.mmsi + "@"
 					+ this.startPoint.timestamp + "@" + this.endPoint.timestamp
-					+ "@" + gridId + "@"
-					+ gridId.split("_")[0] +"@"
-					+ gridId.split("_")[1]+"@"
+					+ "@" + gridId + "@" + gridId.split("_")[0] + "@"
+					+ gridId.split("_")[1] + "@"
+					+ ft.format(this.speed) + "@" 
+					+ this.spanTime + "@"
 					+ ft.format(this.mainEmission() * percent) + "@"
 					+ ft.format(this.auxEmission() * percent) + "@"
 					+ ft.format(this.boilerEmission() * percent) + "@"
-					+ ft.format(this.co2Emission() * percent);
+					+ ft.format(this.co2Emission() * percent) + "@"
+					+ ft.format(this.mainLoadFactor() * 100);
 
-			bw.write(myreadline); // Ð´ÈëÎÄ¼þ
-			bw.newLine();
-			System.out.println(myreadline);// ÔÚÆÁÄ»ÉÏÊä³ö
+			bw.write(myreadline); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+			bw.newLine();			
 
 		}
 	}

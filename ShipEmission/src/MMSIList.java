@@ -1,8 +1,13 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,19 +32,25 @@ public class MMSIList {
 	static HqlResult2 aisRcd; // AIS records from h ypertable
 	static String querySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from shipview "
 			+ "where mmsi is not null and powerkw >0 and type_en is not null and type_en='container'";
-	public static void main(String[] args) throws TTransportException, TException, ClientException {
+	static ThriftClient client;
+	public static void main(String[] args) throws TTransportException, TException, ClientException, IOException {
+		
+		//get ship register records
 		
 		List <Ship> ships =queryShips(querySql);
 		
+		//get ais records from hypertable based on ship mmsi
+		client = ThriftClient.create("192.168.9.175", 38080);
 		String mmsi=ships.get(500).getMMSI();
 		String hql = "select * from t41_ais_history where row=^" + "'"
 				+ mmsi + "'"
-				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01' limit 100";
 		aisRcd=hqlQuery(hql);
 		int count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
 		System.out.println("mmsi: "+mmsi+" count: "+count);
 		
-		// compress the trajectory 
+		// compress the trajectory based on speed,latitude and longtitude distances btn two points
+		System.out.println(new java.util.Date()+"-----------start compress------------");
 		List<GeoPoint> originalShape = new ArrayList<GeoPoint>();
 		List<GeoPoint> newShape = new ArrayList<GeoPoint>();
 		double tolerance = 1;
@@ -56,10 +67,40 @@ public class MMSIList {
 			newShape = AISTrajectoryCompress.reduceWithTolerance(originalShape,
 					tolerance);
 		}
-		System.out.println("origin: " + originalShape.size() + " new: " + newShape.size());
+		System.out.println("compress result:  "+" origin: " + originalShape.size() + " new: " + newShape.size()+"----------");
 		
-		
-		
+		//deal with compressed data,namely, newshape. calculate the statistic measurements of GeoLine and save to files.
+		System.out.println(new java.util.Date()+"-----------start save data to files and hypertable------------");
+		List<GeoPoint> records = new ArrayList<GeoPoint>();
+		records=newShape; //use the compressed shape
+	    GeoPoint endPoint =null;
+	    Ship ship=ships.get(500);//a specific ship
+	    GeoPoint startPoint=newShape.get(0);
+	    //geoline info write to aisline.txt
+		FileWriter fw = new FileWriter("e:/outputs/aisline_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
+        BufferedWriter bw = new BufferedWriter(fw);    //将缓冲对文件的输出
+        //grid emissions write to gridEms.txt
+        FileWriter gridWriter = new FileWriter("e:/outputs/gridEms_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
+        BufferedWriter bgw = new BufferedWriter(gridWriter);    //将缓冲对文件的输出
+		for (int i = 1; i < newShape.size(); i++) {
+			endPoint = newShape.get(i);
+			GeoLine line=new GeoLine(startPoint,endPoint,ship);
+            line.saveToFile(bw);
+            line.gridEmsToFile(bgw);
+			hqlSaveLine(line); //save line meaurements to hypertable ais in namespace '/wzh'
+			hqlSaveGrid(line); // save grid measurenmts to hypertable grid in namespavce  '/wzh'
+			startPoint=endPoint;
+			
+		}
+		System.out.println(new java.util.Date()+"-----------end save data to files and hypertable------------");
+		client.close();
+		bw.flush();    //刷新该流的缓冲
+		bw.close();
+        fw.close();
+        
+        bgw.flush();
+        bgw.close();
+        gridWriter.close();
 	}
 	
 
@@ -169,7 +210,98 @@ public class MMSIList {
 		System.out.println(new java.util.Date());		
 	}
 	
+	public static void hqlSaveLine(GeoLine line) throws TException, TException,
+			ClientException {
 
+		// String insertHql="insert into ais values"
+		// +"('"+rcd.get(1)+"','"+rcd.get(10)+"','ais','"+rcd.get(2)+"#"+rcd.get(3)+"#"+rcd.get(4)+"#"+rcd.get(5)+"#"+rcd.get(6)+"#"+rcd.get(7)+"#"
+		// +rcd.get(8)+"#"+rcd.get(9)+"')";
+
+		String insertHql = "insert into ais values" + "('"
+				+ longStrToDateStr(line.getStartPoint().timestamp) + "','"
+				+ line.getEndPoint().mmsi + " " + line.getStartPoint().timestamp
+				+ "','ais','" 
+				+ line.getEndPoint().sog + "#"
+				+ line.getStartPoint().sog + "#"
+				+ line.timeSpan() + "#"
+				+ line.distance() + "#"
+				+ line.getStartPoint().lon + "#"
+				+ line.getEndPoint().lon + "#" 
+				+ line.getStartPoint().lat + "#"
+				+ line.getEndPoint().lat + "#"
+				+ line.avgSpeed() + "#"
+				+ line.co2Emission() + "#"
+				+ line.getShip().getType() + "')";
+		String tableSchema = "<Schema><AccessGroup name='default'><ColumnFamily><Name>ais</Name><Counter>false</Counter><MaxVersions>1</MaxVersions><deleted>false</deleted></ColumnFamily></AccessGroup></Schema>";
+		long ns = client.open_namespace("/wzh");
+		// 当table 不存在时，程序自动新建table。但不建议采用这种方式，可以直接用ht shell新建。
+		if (client.exists_table(ns, "ais") == false) {
+			// create table:create table ais(ais MAX_VERSIONS=1,ACCESS GROUP
+			// default(ais));
+			client.create_table(ns, "ais", tableSchema);
+		}
+		client.hql_exec2(ns, insertHql, false, false);
+	}
+	
+	public static void hqlSaveGrid(GeoLine line) throws TException, TException,
+			ClientException {
+
+		String gridIds = line.getGridIds();
+		// System.out.println("gridids: " + gridIds);
+		String[] unitEmission = gridIds.split("@");// ����������@123_1212
+													// 0.3@123_1212 0.3
+		//System.out.println("*******gridIds:"+gridIds+"**************");
+		String[] gridIdEms = new String[2];
+		double percent = 0;
+		String gridId = null;
+		String insertHql=null;
+		DecimalFormat ft = new DecimalFormat("###0.0");//����������double 123.123������ 123
+		for (int i = 1; i < unitEmission.length; i++) {// i=0��������
+
+			gridIdEms = unitEmission[i].split(" ");
+			gridId = gridIdEms[0];
+			percent = Double.parseDouble(gridIdEms[1]);
+			
+			insertHql = "insert into grid values" + "('"
+					+ longStrToDateStr(line.getStartPoint().timestamp) + "','"
+					+ gridId + " " 
+					+ line.getStartPoint().mmsi + " "
+					+ line.getStartPoint().timestamp + "','grid','"
+					+ gridId.split("_")[0] + "#"
+				    + gridId.split("_")[1] + "#"
+				    + ft.format(line.avgSpeed()) + "#" 
+				    + line.timeSpan() + "#"
+				    + ft.format(line.mainEmission() * percent) + "#"
+				    + ft.format(line.auxEmission() * percent) + "#"
+				    + ft.format(line.boilerEmission() * percent) + "#"
+				    + ft.format(line.co2Emission() * percent) + "#"
+				    + ft.format(line.mainLoadFactor() * 100)
+				    + "')";	
+			
+		}
+
+		String tableSchema = "<Schema><AccessGroup name='default'><ColumnFamily><Name>grid</Name><Counter>false</Counter><MaxVersions>1</MaxVersions><deleted>false</deleted></ColumnFamily></AccessGroup></Schema>";
+		long ns = client.open_namespace("/wzh");
+		// 当table 不存在时，程序自动新建table。但不建议采用这种方式，可以直接用ht shell新建。
+		if (client.exists_table(ns, "grid") == false) {
+			// create table:create table grid(grid MAX_VERSIONS=1,ACCESS GROUP
+			// default(grid));
+			client.create_table(ns, "grid", tableSchema);
+		}
+		client.hql_exec2(ns, insertHql, false, false);
+	}
+
+	// timestamp from long to Date string
+	public static String longStrToDateStr(long timestamp) {
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		// 前面的lSysTime是秒数，先乘1000得到毫秒数，再转为java.util.Date类型
+		java.util.Date dt = new java.util.Date(timestamp * 1000);
+		String sDateTime = sdf.format(dt); // 得到精确到秒的表示：08/31/2006 21:08:00
+		// System.out.println(sDateTime);
+		return sDateTime;
+
+	}
 
 }
 
