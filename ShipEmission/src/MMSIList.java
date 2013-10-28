@@ -24,28 +24,46 @@ public class MMSIList {
 	 * @param args
 	 */
 	
-	static HqlResult2 aisRcd; // AIS records from hypertable
+	static HqlResult2 aisRcd; // AIS records from h ypertable
 	static String querySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from shipview "
 			+ "where mmsi is not null and powerkw >0 and type_en is not null and type_en='container'";
 	public static void main(String[] args) throws TTransportException, TException, ClientException {
-		// TODO Auto-generated method stub
 		
 		List <Ship> ships =queryShips(querySql);
-		Ship ship=ships.get(500);
 		
+		String mmsi=ships.get(500).getMMSI();
 		String hql = "select * from t41_ais_history where row=^" + "'"
-				+ ship.getMMSI() + "'"
+				+ mmsi + "'"
 				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
-		
-		int count = 0;
-		System.out.println("ship mmsi **********************: "+ship.getMMSI()+ "number of ships: " +ships.size());
 		aisRcd=hqlQuery(hql);
-		count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
-		System.out.println("count:*******"+count);
+		int count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
+		System.out.println("mmsi: "+mmsi+" count: "+count);
 		
-
+		// compress the trajectory 
+		List<GeoPoint> originalShape = new ArrayList<GeoPoint>();
+		List<GeoPoint> newShape = new ArrayList<GeoPoint>();
+		double tolerance = 1;
+		List<String> point = new ArrayList<String>();
+		
+		for (int i = 0; i < aisRcd.cells.size(); i++) {
+			List<String> record = aisRcd.cells.get(i);
+			point = extractAIS(record);
+			originalShape.add(new GeoPoint(point.get(0), Long.parseLong(point
+					.get(1)), Double.parseDouble(point.get(4)), Double
+					.parseDouble(point.get(7)),
+					Double.parseDouble(point.get(6)), Double.parseDouble(point
+							.get(8))));
+			newShape = AISTrajectoryCompress.reduceWithTolerance(originalShape,
+					tolerance);
+		}
+		System.out.println("origin: " + originalShape.size() + " new: " + newShape.size());
+		
+		
+		
 	}
 	
+
+
 	//get ais messages from hypertable
 	
 	public static HqlResult2 hqlQuery(String hql) throws TTransportException, TException,
@@ -137,6 +155,7 @@ public class MMSIList {
 		int shipsSize=ships.size();
 		HqlResult2 aisRcd;
 		int count=0;
+		System.out.println("ships size: " + shipsSize);
 	    System.out.println(new java.util.Date());
 		for (int i=0;i<shipsSize-1;i++){	
 			mmsi=ships.get(i).getMMSI();
@@ -149,6 +168,8 @@ public class MMSIList {
 		}
 		System.out.println(new java.util.Date());		
 	}
+	
+
 
 }
 
