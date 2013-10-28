@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.thrift.TException;
@@ -11,10 +12,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.hypertable.thrift.ThriftClient;
 import org.hypertable.thriftgen.ClientException;
 import org.hypertable.thriftgen.HqlResult2;
-
-/**
- * aims to get the distinct mmsi list from ais hypertable database
- */
 
 /**
  * @author zhihuan
@@ -35,14 +32,17 @@ public class MMSIList {
 		
 		List <Ship> ships =queryShips(querySql);
 		Ship ship=ships.get(500);
+		
 		String hql = "select * from t41_ais_history where row=^" + "'"
 				+ ship.getMMSI() + "'"
 				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+		
 		int count = 0;
 		System.out.println("ship mmsi **********************: "+ship.getMMSI()+ "number of ships: " +ships.size());
 		aisRcd=hqlQuery(hql);
 		count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
 		System.out.println("count:*******"+count);
+		
 
 	}
 	
@@ -127,6 +127,27 @@ public class MMSIList {
 			System.out.println("数据库连接失败" + e.getMessage());
 		}
 		return con; // 返回所建立的数据库连接
+	}
+	
+	// count the number of ais messages for each ship in the year of 2012
+	public static void countEachShipAisMsg(List<Ship> ships) throws TTransportException, TException, ClientException{
+		
+		String mmsi;
+		String hql;
+		int shipsSize=ships.size();
+		HqlResult2 aisRcd;
+		int count=0;
+	    System.out.println(new java.util.Date());
+		for (int i=0;i<shipsSize-1;i++){	
+			mmsi=ships.get(i).getMMSI();
+			hql="select * from t41_ais_history where row=^" + "'"
+					+ mmsi + "'"
+					+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+			aisRcd=hqlQuery(hql);
+			count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
+			System.out.println("ship mmsi: " + mmsi + "  count:*******"+count);	
+		}
+		System.out.println(new java.util.Date());		
 	}
 
 }
