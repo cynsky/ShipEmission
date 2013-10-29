@@ -44,10 +44,11 @@ public class MMSIList {
 		String mmsi=ships.get(500).getMMSI();
 		String hql = "select * from t41_ais_history where row=^" + "'"
 				+ mmsi + "'"
-				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01' limit 100";
+				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 		aisRcd=hqlQuery(hql);
 		int count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
 		System.out.println("mmsi: "+mmsi+" count: "+count);
+		
 		
 		// compress the trajectory based on speed,latitude and longtitude distances btn two points
 		System.out.println(new java.util.Date()+"-----------start compress------------");
@@ -85,10 +86,18 @@ public class MMSIList {
 		for (int i = 1; i < newShape.size(); i++) {
 			endPoint = newShape.get(i);
 			GeoLine line=new GeoLine(startPoint,endPoint,ship);
+			if(i==7625){
+				System.out.println("distance"+line.distance()+"speed:"+line.avgSpeed()+"mainload:"+line.mainLoadFactor()
+						+"sLon:"+line.getStartPoint().longitudeE6+"slat:"+line.getStartPoint().latitudeE6
+						+"elon:"+line.getEndPoint().longitudeE6+"elat:"+line.getEndPoint().latitudeE6);
+			}
             line.saveToFile(bw);
             line.gridEmsToFile(bgw);
-			hqlSaveLine(line); //save line meaurements to hypertable ais in namespace '/wzh'
-			hqlSaveGrid(line); // save grid measurenmts to hypertable grid in namespavce  '/wzh'
+//          System.out.println("start savelineto ht i: " + i + " date: " +new java.util.Date());
+//			hqlSaveLine(line); //save line meaurements to hypertable ais in namespace '/wzh'
+//			System.out.println("start savegrid to ht i: " + i + " date: " +new java.util.Date());
+//			hqlSaveGrid(line); // save grid measurenmts to hypertable grid in namespavce  '/wzh'
+			
 			startPoint=endPoint;
 			
 		}
@@ -103,8 +112,6 @@ public class MMSIList {
         gridWriter.close();
 	}
 	
-
-
 	//get ais messages from hypertable
 	
 	public static HqlResult2 hqlQuery(String hql) throws TTransportException, TException,

@@ -13,7 +13,7 @@ public class GeoLine {
 	private double speed;
 	private double spanTime;
 	private double distance;
-	static DecimalFormat ft = new DecimalFormat("###0.0");//����������double 123.123������ 123 
+	static DecimalFormat ft = new DecimalFormat("#########.#");//����������double 123.123������ 123 
 
 	public GeoLine(GeoPoint start, GeoPoint end, Ship ship) {
 		this.startPoint = start;
@@ -44,22 +44,22 @@ public class GeoLine {
 		return timeSpan;
 	}
 
+	// the result of this method seems a little bit bigger than the method in GeoPoint.java
+	// however, the later one has product a result with NaN in line 7625, which could not be read by R program
 	public double distance() {
-		// double PI = Math.PI;
-		// double R = 6378137; // meters
-		// // ������������������
-		// double cLonR = this.endPoint.lon * PI / 180;
-		// double cLatR = this.endPoint.lat * PI / 180;
-		// double pLonR = this.startPoint.lon * PI / 180;
-		// double pLatR = this.startPoint.lat * PI / 180;
-		// double x = (cLonR - pLonR) * Math.cos((cLatR + pLatR) / 2);
-		// double y = cLatR - pLatR;
-		// double distance = Math.pow(Math.pow(x, 2) + Math.pow(y, 2), 0.5) * R/
-		// 1852; 
-		// return distance;
-		double distance = this.endPoint.distanceTo(this.startPoint) / 1852;// ��������������������600������
-		 															// ����
-		return distance;
+		 double PI = Math.PI;
+		 double R = 6378137; // meters
+		 double cLonR = this.endPoint.lon * PI / 180;
+		 double cLatR = this.endPoint.lat * PI / 180;
+		 double pLonR = this.startPoint.lon * PI / 180;
+		 double pLatR = this.startPoint.lat * PI / 180;
+		 double x = (cLonR - pLonR) * Math.cos((cLatR + pLatR) / 2);
+		 double y = cLatR - pLatR;
+		 double distance = Math.pow(Math.pow(x, 2) + Math.pow(y, 2), 0.5) * R/
+		 1855; //1855 or 1852 ,china 1852 ,england:1855, my calculation in lon=0,lat from 0 to 0.1 1855
+		 return distance;
+//		double distance = this.endPoint.distanceTo(this.startPoint)/1852;
+//		return distance;
 	}
 
 	public double avgSpeed() {
@@ -71,7 +71,7 @@ public class GeoLine {
 			avg_speed = 0.5 * 0.1 * (this.startPoint.sog + this.endPoint.sog);
 		} else {
 
-			avg_speed = this.distance() / this.spanTime * 3600;
+			avg_speed = this.distance()/this.spanTime * 3600;
 		}
 		return avg_speed;
 
@@ -203,7 +203,7 @@ public class GeoLine {
 					} else {
 						percent = 1 / (Math.abs(cLat - pLat) * enlarge);
 					}
-					// gridIds��������
+					// gridIds
 					gridIds = gridIds + "@" + cLonFloor + "_"
 							+ (Math.min(cLatFloor, pLatFloor) + i) + " "
 							+ percent;
@@ -303,7 +303,7 @@ public class GeoLine {
 
 	public double auxLoadFactor() {
 		// just for container type
-		double loadFactor = 0;
+		double loadFactor = 0.0;
 
 		// assume:
 		// hotelling(0=<speed<1),maneuvering(1=<speed<9),RSZ(9-12),cruise(>12)
@@ -376,9 +376,9 @@ public class GeoLine {
 					+ ft.format(this.co2Emission()) + "@" 
 					+ ft.format(this.mainLoadFactor()*100);
 
-			bw.write(myreadline); // ��������
+			bw.write(myreadline);
 			bw.newLine();
-			//System.out.println(myreadline);// ������������
+			//System.out.println(myreadline);// 
 
 		} catch (IOException e) {
 			e.printStackTrace();

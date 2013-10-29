@@ -107,6 +107,8 @@ public GeoPoint(String mmsi,long timestamp,double sog,double lon,double lat,doub
 	public double getLatitude() {
 		return this.latitudeE6 / CONVERSION_FACTOR;
 	}
+	
+	
 
 	/**
 	 * @return the longitude value of this GeoPoint in degrees.
@@ -137,10 +139,10 @@ public GeoPoint(String mmsi,long timestamp,double sog,double lon,double lat,doub
 	 */
 	public double distanceTo(final GeoPoint other) {
 
-		double a1 = DEG2RAD * latitudeE6 / 1E6;
-		double a2 = DEG2RAD * longitudeE6 / 1E6;
-		double b1 = DEG2RAD * other.latitudeE6 / 1E6;
-		double b2 = DEG2RAD * other.longitudeE6 / 1E6;
+		double a1 = DEG2RAD * latitudeE6/1E6;
+		double a2 = DEG2RAD * longitudeE6/1E6;
+		double b1 = DEG2RAD * other.latitudeE6/1E6;
+		double b2 = DEG2RAD * other.longitudeE6/1E6;
 
 		double cosa1 = Math.cos(a1);
 		double cosb1 = Math.cos(b1);
