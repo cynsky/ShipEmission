@@ -44,7 +44,7 @@ public class MMSIList {
 		client = ThriftClient.create("192.168.9.175", 38080);
 		List <Ship> ships =queryShips(querySql);
 		
-		
+		saveMultipleShipTrajectories();
 		
 		//countShipAISMsg(containerQuerySql);
 		

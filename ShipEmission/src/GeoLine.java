@@ -149,9 +149,9 @@ public class GeoLine {
 		fuel = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC()
 				+ auxPower * timeSpan * this.auxLoadFactor() * this.auxBSFC();
 		// ��������������������������������������������������
-		System.out.println("design_speed: " + design_speed + "avgSpeed: "
-				+ this.avgSpeed() + "power:" + powerkw + "sfoc:213"
-				+ "fuel consumption: " + Math.round(fuel));
+//		System.out.println("design_speed: " + design_speed + "avgSpeed: "
+//				+ this.avgSpeed() + "power:" + powerkw + "sfoc:213"
+//				+ "fuel consumption: " + Math.round(fuel));
 		return Math.round(fuel);
 
 	}
@@ -373,7 +373,10 @@ public class GeoLine {
 					+ ft.format(this.auxEmission())+ "@" 
 					+ ft.format(this.boilerEmission()) +"@" 
 					+ ft.format(this.co2Emission()) + "@" 
-					+ ft.format(this.mainLoadFactor()*100);
+					+ ft.format(this.mainLoadFactor()*100)+"@"
+					+ ft.format(this.fuelConsumption());
+			
+			
 
 			bw.write(myreadline);
 			bw.newLine();
@@ -410,7 +413,8 @@ public class GeoLine {
 					+ ft.format(this.auxEmission() * percent) + "@"
 					+ ft.format(this.boilerEmission() * percent) + "@"
 					+ ft.format(this.co2Emission() * percent) + "@"
-					+ ft.format(this.mainLoadFactor() * 100);
+					+ ft.format(this.mainLoadFactor() * 100)+"@"
+					+ ft.format(this.fuelConsumption() * percent);
 
 			bw.write(myreadline); 
 			bw.newLine();			
