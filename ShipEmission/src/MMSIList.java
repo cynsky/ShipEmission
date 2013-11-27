@@ -1,6 +1,7 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -32,19 +33,29 @@ public class MMSIList {
 	static HqlResult2 aisRcd; // AIS records from h ypertable
 	static String querySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from shipview "
 			+ "where mmsi is not null and powerkw >0 and type_en is not null and type_en='container'";
+	
+	static String containerQuerySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from ships "
+			+ "where mmsi is not null and type_en='container'";
+
 	static ThriftClient client;
-	public static void main(String[] args) throws TTransportException, TException, ClientException, IOException {
+	public static void main(String[] args) throws TTransportException, TException, ClientException, IOException, SQLException {
 		
 		//get ship register records
-		
+		client = ThriftClient.create("192.168.9.175", 38080);
 		List <Ship> ships =queryShips(querySql);
 		
+		countShipAISMsg(containerQuerySql);
+		
 		//get ais records from hypertable based on ship mmsi
-		client = ThriftClient.create("192.168.9.175", 38080);
-		String mmsi=ships.get(500).getMMSI();
-		String hql = "select * from t41_ais_history where row=^" + "'"
-				+ mmsi + "'"
-				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+		
+//		String mmsi=ships.get(500).getMMSI();
+//		String hql = "select * from t41_ais_history where row=^" + "'"
+//				+ mmsi + "'"
+//				+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+		
+		String mmsi="413623000";
+		String hql="select * from t41_ais_history where row=^"+"'"+mmsi+"' and '2013-10-28 12:30:00' > TIMESTAMP > '2013-10-24 02:00:00'";
+
 		aisRcd=hqlQuery(hql);
 		int count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
 		System.out.println("mmsi: "+mmsi+" count: "+count);
@@ -62,8 +73,8 @@ public class MMSIList {
 			point = extractAIS(record);
 			originalShape.add(new GeoPoint(point.get(0), Long.parseLong(point
 					.get(1)), Double.parseDouble(point.get(4)), Double
-					.parseDouble(point.get(7)),
-					Double.parseDouble(point.get(6)), Double.parseDouble(point
+					.parseDouble(point.get(6)),
+					Double.parseDouble(point.get(7)), Double.parseDouble(point
 							.get(8))));
 			newShape = AISTrajectoryCompress.reduceWithTolerance(originalShape,
 					tolerance);
@@ -75,7 +86,18 @@ public class MMSIList {
 		List<GeoPoint> records = new ArrayList<GeoPoint>();
 		records=newShape; //use the compressed shape
 	    GeoPoint endPoint =null;
-	    Ship ship=ships.get(500);//a specific ship
+	    
+	    
+	    //Ship ship=ships.get(500);//a specific ship
+	    
+	    Ship ship=new Ship();
+	    ship.setDesignSpeed(12);
+	    ship.setDWT(22659);
+	    ship.setMMSI(mmsi);
+	    ship.setPowerKw(4400);
+	    ship.setType("general cargo"); 
+	    
+	    
 	    GeoPoint startPoint=newShape.get(0);
 	    //geoline info write to aisline.txt
 		FileWriter fw = new FileWriter("e:/outputs/aisline_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
@@ -165,6 +187,7 @@ public class MMSIList {
 		try {
 			st = conn.createStatement(); // 创建用于执行静态sql语句的Statement对象，st属局部变量
 			rs = st.executeQuery(sql); // 执行sql查询语句，返回查询数据的结果集
+			
 			while (rs.next()) { // 判断是否还有下一个数据
 				// 根据字段名获取相应的值
 			    Ship ship = new Ship();
@@ -204,17 +227,19 @@ public class MMSIList {
 		HqlResult2 aisRcd;
 		int count=0;
 		System.out.println("ships size: " + shipsSize);
-	    System.out.println(new java.util.Date());
-		for (int i=0;i<shipsSize-1;i++){	
+	    System.out.println("start at:"+new java.util.Date());
+		for (int i=0;i<shipsSize-1;i++){
+			System.out.println("start time:"+new java.util.Date());
 			mmsi=ships.get(i).getMMSI();
 			hql="select * from t41_ais_history where row=^" + "'"
 					+ mmsi + "'"
 					+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 			aisRcd=hqlQuery(hql);
 			count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
-			System.out.println("ship mmsi: " + mmsi + "  count:*******"+count);	
+			System.out.println(mmsi + " "+count);	
+			System.out.println("end time:"+new java.util.Date());
 		}
-		System.out.println(new java.util.Date());		
+		System.out.println("end at:"+new java.util.Date());		
 	}
 	
 	public static void hqlSaveLine(GeoLine line) throws TException, TException,
@@ -308,6 +333,57 @@ public class MMSIList {
 		// System.out.println(sDateTime);
 		return sDateTime;
 
+	}
+	
+	public static void countShipAISMsg(String shipQuerySql) throws SQLException, TTransportException, TException, ClientException, IOException{
+		
+		ResultSet rs;
+	    Connection conn;
+		Statement st;
+		HqlResult2 aisRcd;
+		String hql,mmsi,readLine;
+		conn = getConnection(); // 同样先要获取连接，即连接到数据库
+	    st = conn.createStatement(); // 创建用于执行静态sql语句的Statement对象，st属局部变量
+		rs = st.executeQuery(shipQuerySql); // 执行sql查询语句，返回查询数据的结果集
+		int count=0;
+		int i=0;
+		List<String> startPoint, endPoint;
+		FileWriter fw;
+		
+			fw = new FileWriter("e:/outputs/containerAisCount.txt");
+			//创建FileWriter对象，用来写入字符流
+	        BufferedWriter cbw = new BufferedWriter(fw);  //将缓冲对文件的输出
+	        
+		while(rs.next()){	
+			i++;
+					
+			mmsi=rs.getString("mmsi");
+			hql="select * from t41_ais_history where row=^" + "'"
+					+ mmsi + "'"
+					+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+			aisRcd=hqlQuery(hql);
+			count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
+			
+			startPoint=aisRcd.cells.get(0);
+			endPoint=aisRcd.cells.get(count-1);
+			startPoint=extractAIS(startPoint);
+			endPoint=extractAIS(endPoint);
+			
+			
+			readLine = mmsi + " " + count;
+			cbw.write(readLine);
+			cbw.newLine();
+			//System.out.println(myreadline);// 			
+			System.out.println(i+ " " + mmsi + " "+count);
+			
+						
+		}		
+        cbw.flush();  
+		System.out.println("end:"+new java.util.Date());	
+		
+		conn.close();
+		cbw.close();
+		
 	}
 
 }

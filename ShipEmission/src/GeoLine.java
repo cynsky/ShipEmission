@@ -14,6 +14,7 @@ public class GeoLine {
 	private double spanTime;
 	private double distance;
 	static DecimalFormat ft = new DecimalFormat("#########.#");//����������double 123.123������ 123 
+	static int enlarge=10;//scale for the unit grid o.1*0.1 if enlarge =100 0.01*0.01	
 
 	public GeoLine(GeoPoint start, GeoPoint end, Ship ship) {
 		this.startPoint = start;
@@ -56,7 +57,7 @@ public class GeoLine {
 		 double x = (cLonR - pLonR) * Math.cos((cLatR + pLatR) / 2);
 		 double y = cLatR - pLatR;
 		 double distance = Math.pow(Math.pow(x, 2) + Math.pow(y, 2), 0.5) * R/
-		 1855; //1855 or 1852 ,china 1852 ,england:1855, my calculation in lon=0,lat from 0 to 0.1 1855
+		 1852; //1855 or 1852 ,china 1852 ,england:1855, my calculation in lon=0,lat from 0 to 0.1 1855
 		 return distance;
 //		double distance = this.endPoint.distanceTo(this.startPoint)/1852;
 //		return distance;
@@ -277,15 +278,12 @@ public class GeoLine {
 		return gridIds;
 
 	}
-	
-	
-    
 
 	public double mainLoadFactor() {
 
 		double factor = 0.0;
 		double load = Math.pow(this.avgSpeed() / this.ship.getSpeed(), 3);
-		if (load < 0.02 && this.speed >= 1) { // ����ICF 2009�� ����load factor ��0.02
+		if (load < 0.02 && this.speed >=0.5) { // ����ICF 2009�� ����load factor ��0.02
 			factor = 0.02;
 
 		} else {
@@ -357,9 +355,10 @@ public class GeoLine {
 	public void saveToFile(BufferedWriter bw) {
 
 		try {
-            //mmsi+timestamp(s)+sog/10(nm/h)+start lat(��)+start lon + end lat +end lon+distance(meters)+avgspeed(nm/h)
-			//+spantime(s)+main eng emission(g)+ aux emission(g)+bioler emission(g)+ total emission+main eng load factor(%)
-			String myreadline = this.startPoint.mmsi + "@"
+            //mmsi+start_time(s)+start_sog/10(nm/h)+end_sog+start_lat+start_lon + end_lat +end_lon
+			//+distance(nm)+avgspeed(nm/h)
+			//+spantime(s)+main_emission(g)+ aux_emission(g)+bioler_emission(g)+ total_emission+main main_load(%)
+			String myreadline = this.startPoint.mmsi + "@" 
 					+ this.startPoint.timestamp + "@"
 					+ this.startPoint.sog / 10 + "@"
 					+ this.endPoint.sog / 10 + "@"
@@ -390,8 +389,7 @@ public class GeoLine {
 
 		String gridIds = this.getGridIds();
 		// System.out.println("gridids: " + gridIds);
-		String[] unitEmission = gridIds.split("@");// ����������@123_1212
-													// 0.3@123_1212 0.3
+		String[] unitEmission = gridIds.split("@");// ����������@123_1212 0.3@123_1212 0.3
 		String[] gridIdEms = new String[2];
 		double percent = 0;
 		String gridId = null;
@@ -399,12 +397,11 @@ public class GeoLine {
 			gridIdEms = unitEmission[i].split(" ");
 			gridId = gridIdEms[0];
 			percent = Double.parseDouble(gridIdEms[1]);
-			// mmsi+star timestamp(s)+end
-			// timestamp(s)+scale(��������100)+gridId(lon(��)*100+lat*100) +
-			// main eng emission(g)+ aux emission(g)+bioler
-			// emission(g)+totalEmission(g)
+			// mmsi+star_time(s)+end_time(s)+scale(��������10)+gridId(lon(��)*10+lat*10) + lon*10,lat*10
+			// spantime(s)+main_emission(g)+ aux_emission(g)+bioler_emission(g)+total_Emission(g)
 			String myreadline = this.startPoint.mmsi + "@"
-					+ this.startPoint.timestamp + "@" + this.endPoint.timestamp
+					+ this.startPoint.timestamp + "@" 
+					+ this.endPoint.timestamp
 					+ "@" + gridId + "@" + gridId.split("_")[0] + "@"
 					+ gridId.split("_")[1] + "@"
 					+ ft.format(this.speed) + "@" 
@@ -415,12 +412,9 @@ public class GeoLine {
 					+ ft.format(this.co2Emission() * percent) + "@"
 					+ ft.format(this.mainLoadFactor() * 100);
 
-			bw.write(myreadline); // ��������
+			bw.write(myreadline); 
 			bw.newLine();			
 
 		}
 	}
-
-
-
 }
