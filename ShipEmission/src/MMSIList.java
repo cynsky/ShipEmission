@@ -30,12 +30,12 @@ public class MMSIList {
 	 * @param args
 	 */
 	
-	static HqlResult2 aisRcd; // AIS records from h ypertable
+	static HqlResult2 aisRcd; // AIS records from hypertable
 	static String querySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from shipview "
 			+ "where mmsi is not null and powerkw >0 and type_en is not null and type_en='container'";
 	
 	static String containerQuerySql ="select shipid,mmsi,speed,powerkw,dwt,type_en from ships "
-			+ "where mmsi is not null and type_en='container'";
+			+ "where mmsi is not null and speed>0 and dwt>0 and powerkw>0 and type_en='container'";
 
 	static ThriftClient client;
 	public static void main(String[] args) throws TTransportException, TException, ClientException, IOException, SQLException {
@@ -44,7 +44,9 @@ public class MMSIList {
 		client = ThriftClient.create("192.168.9.175", 38080);
 		List <Ship> ships =queryShips(querySql);
 		
-		countShipAISMsg(containerQuerySql);
+		
+		
+		//countShipAISMsg(containerQuerySql);
 		
 		//get ais records from hypertable based on ship mmsi
 		
@@ -341,7 +343,7 @@ public class MMSIList {
 	    Connection conn;
 		Statement st;
 		HqlResult2 aisRcd;
-		String hql,mmsi,readLine;
+		String hql,mmsi,readLine,sDate,eDate;
 		conn = getConnection(); // 同样先要获取连接，即连接到数据库
 	    st = conn.createStatement(); // 创建用于执行静态sql语句的Statement对象，st属局部变量
 		rs = st.executeQuery(shipQuerySql); // 执行sql查询语句，返回查询数据的结果集
@@ -350,7 +352,7 @@ public class MMSIList {
 		List<String> startPoint, endPoint;
 		FileWriter fw;
 		
-			fw = new FileWriter("e:/outputs/containerAisCount.txt");
+			fw = new FileWriter("e:/outputs/containerAisCount_shipwithdata.txt");
 			//创建FileWriter对象，用来写入字符流
 	        BufferedWriter cbw = new BufferedWriter(fw);  //将缓冲对文件的输出
 	        
@@ -363,26 +365,105 @@ public class MMSIList {
 					+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 			aisRcd=hqlQuery(hql);
 			count=aisRcd.cells.size(); // the output number is set to be less then Integer.MAX_VALUE=2147483647
-			
+			if (count>0){
 			startPoint=aisRcd.cells.get(0);
 			endPoint=aisRcd.cells.get(count-1);
 			startPoint=extractAIS(startPoint);
 			endPoint=extractAIS(endPoint);
 			
-			
-			readLine = mmsi + " " + count;
+			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			sDate=sdf.format(new Date(Long.parseLong(startPoint.get(1))*1000)); 
+			eDate=sdf.format(new Date(Long.parseLong(endPoint.get(1))*1000)); 
+			readLine = mmsi + " " + count + " " + sDate +" " + eDate ;
 			cbw.write(readLine);
 			cbw.newLine();
 			//System.out.println(myreadline);// 			
-			System.out.println(i+ " " + mmsi + " "+count);
+			System.out.println(i+ " " + mmsi + " "+count + " " + sDate +" " + eDate);
+			}
 			
 						
 		}		
         cbw.flush();  
 		System.out.println("end:"+new java.util.Date());	
-		
 		conn.close();
 		cbw.close();
+		
+	}
+	
+	public static void saveMultipleShipTrajectories() throws TTransportException, TException, ClientException, IOException{
+	String shipQuerySql="select shipid,mmsi,speed,powerkw,dwt,type_en from ships "
+			+ "where mmsi is not null and speed>0 and dwt>0 and powerkw>0 and type_en='container'";
+	String trajectoryQueryHql,mmsi;
+	List <Ship> ships =queryShips(shipQuerySql);
+	Ship ship;
+	HqlResult2 hRst;
+	GeoPoint endPoint;
+	GeoPoint startPoint;
+	List<GeoPoint> oriShape = new ArrayList<GeoPoint>();
+	List<GeoPoint> newShape = new ArrayList<GeoPoint>();
+	double tolerance = 1;
+	List<String> point = new ArrayList<String>();
+	
+	
+	if(ships.size()>0){
+		
+		for(int i=0; i<ships.size();i++){
+			
+			ship=ships.get(i);
+			mmsi=ship.getMMSI();
+			trajectoryQueryHql="select * from t41_ais_history where row=^" + "'"
+					+ mmsi + "'"
+					+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+			hRst=hqlQuery(trajectoryQueryHql);
+			if(hRst.cells.size()>2){
+				point = extractAIS(hRst.cells.get(i));
+				oriShape.add(new GeoPoint(point.get(0), Long.parseLong(point
+						.get(1)), Double.parseDouble(point.get(4)), Double
+						.parseDouble(point.get(6)),
+						Double.parseDouble(point.get(7)), Double.parseDouble(point
+								.get(8))));
+				newShape = AISTrajectoryCompress.reduceWithTolerance(oriShape,
+						tolerance);
+				
+				System.out.println(mmsi + " compress:  "+" origin: " + oriShape.size() + " new: " + newShape.size());
+				//deal with compressed data,namely, newshape. calculate the statistic measurements of GeoLine and save to files.
+				System.out.println(new java.util.Date()+" " +mmsi+ "-----------start save data to files and hypertable------------");
+			    
+				FileWriter fw = new FileWriter("e:/outputs/aisline_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
+				BufferedWriter bw = new BufferedWriter(fw);    //将缓冲对文件的输出
+			    //grid emissions write to gridEms.txt
+			    FileWriter gridWriter = new FileWriter("e:/outputs/gridEms_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
+			    BufferedWriter bgw = new BufferedWriter(gridWriter);    //将缓冲对文件的输出
+				
+				startPoint=newShape.get(0);
+			    //geoline info write to aisline.txt
+				
+				for (int j = 1; j < newShape.size(); j++) {
+					endPoint = newShape.get(j);
+					GeoLine line=new GeoLine(startPoint,endPoint,ship);
+					
+		            line.saveToFile(bw);
+		            line.gridEmsToFile(bgw);				
+					startPoint=endPoint;
+					
+				}
+				System.out.println(new java.util.Date()+" " + mmsi+"-----------end save data to files and hypertable------------");
+				
+				bw.flush();    //刷新该流的缓冲
+				bw.close();
+		        fw.close();
+		        bgw.flush();
+		        bgw.close();
+		        gridWriter.close();
+				
+			}
+					
+			
+			
+		}
+		
+	}
+	
 		
 	}
 
