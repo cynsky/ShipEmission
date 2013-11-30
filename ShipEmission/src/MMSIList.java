@@ -416,23 +416,28 @@ public class MMSIList {
 					+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 			hRst=hqlQuery(trajectoryQueryHql);
 			if(hRst.cells.size()>2){
-				point = extractAIS(hRst.cells.get(i));
-				oriShape.add(new GeoPoint(point.get(0), Long.parseLong(point
-						.get(1)), Double.parseDouble(point.get(4)), Double
-						.parseDouble(point.get(6)),
-						Double.parseDouble(point.get(7)), Double.parseDouble(point
-								.get(8))));
-				newShape = AISTrajectoryCompress.reduceWithTolerance(oriShape,
-						tolerance);
+				for (int k=0;k<hRst.cells.size();k++){
+					
+					point = extractAIS(hRst.cells.get(k));
+					oriShape.add(new GeoPoint(point.get(0), Long.parseLong(point
+							.get(1)), Double.parseDouble(point.get(4)), Double
+							.parseDouble(point.get(6)),
+							Double.parseDouble(point.get(7)), Double.parseDouble(point
+									.get(8))));
+					newShape = AISTrajectoryCompress.reduceWithTolerance(oriShape,
+							tolerance);
+					
+				}
+				
 				
 				System.out.println(mmsi + " compress:  "+" origin: " + oriShape.size() + " new: " + newShape.size());
 				//deal with compressed data,namely, newshape. calculate the statistic measurements of GeoLine and save to files.
 				System.out.println(new java.util.Date()+" " +mmsi+ "-----------start save data to files and hypertable------------");
 			    
-				FileWriter fw = new FileWriter("e:/outputs/aisline_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
+				FileWriter fw = new FileWriter("e:/outputs/containers/aisline_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
 				BufferedWriter bw = new BufferedWriter(fw);    //将缓冲对文件的输出
 			    //grid emissions write to gridEms.txt
-			    FileWriter gridWriter = new FileWriter("e:/outputs/gridEms_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
+			    FileWriter gridWriter = new FileWriter("e:/outputs/containers/gridEms_"+mmsi+".txt");//创建FileWriter对象，用来写入字符流
 			    BufferedWriter bgw = new BufferedWriter(gridWriter);    //将缓冲对文件的输出
 				
 				startPoint=newShape.get(0);

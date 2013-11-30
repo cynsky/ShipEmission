@@ -77,7 +77,45 @@ public class GeoLine {
 		return avg_speed;
 
 	}
+	
+	public double fuelConsumption() {
+		// assume:type:container, oil:RO
+		double fuel = 0;
+		// double SFOC= 213;// ����������HFO(RO), SFOC=213g/kw.h
+		double design_speed = this.ship.getSpeed()/0.95;
+		double timeSpan = this.spanTime / 3600;// ����
+		double powerkw = this.ship.getPower();
+		double engFactor = 0.220;// aux engine power/main engine power =0.220
+		double auxPower = powerkw * engFactor;
 
+		// ������������������
+		fuel = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC()
+				+ auxPower * timeSpan * this.auxLoadFactor() * this.auxBSFC();
+		// ��������������������������������������������������
+//		System.out.println("design_speed: " + design_speed + "avgSpeed: "
+//				+ this.avgSpeed() + "power:" + powerkw + "sfoc:213"
+//				+ "fuel consumption: " + Math.round(fuel));
+		return Math.round(fuel);
+
+	}
+	
+	public double mainFuelConsumption(){
+		double out=0;
+		double designSpeed = this.ship.getSpeed()/0.95;//knots
+		double timeSpan = this.spanTime / 3600;// hours
+		double powerkw = this.ship.getPower();//kw/hr
+		out = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC();
+		
+		return out;
+		
+	}
+	public double auxFuelConsumption(){
+		double out=0;
+		
+		
+		return out;
+		
+	}
 	
 	public double co2Emission() {
 		return Math.round(this.mainEmission() + this.auxEmission()
@@ -94,7 +132,6 @@ public class GeoLine {
 		
 		emission = powerkw * timeSpan * this.mainLoadFactor()
 				* this.mainEmFactor();
-
 		return Math.round(emission);
 
 	}
@@ -109,7 +146,6 @@ public class GeoLine {
 		double engFactor = 0.220;// aux engine power/main engine power =0.220
 		double auxPower = powerkw * engFactor;
 
-		
 		emission = auxPower * timeSpan * this.auxLoadFactor()
 				* this.auxEmFactor();
 
@@ -120,169 +156,38 @@ public class GeoLine {
 	public double boilerEmission() {
 		// ��������
 		double eFactor = 922.97;
-
-		double timeSpan = this.spanTime / 3600;// ����
-		int boilerEnergy = 506;
 		double emission = 0;
-		// ������maveuring �� hotelling����������Boiler��������
-		if (this.speed < 8) {
-
-			emission = boilerEnergy * timeSpan * eFactor;
-
-		}
+		
+		emission=this.boilerFuel()*eFactor;
 
 		return Math.round(emission);
 
 	}
+	
+	public double boilerFuel(){
+		double out =0;
+		double timeSpan = this.spanTime / 3600;// hour
+		int boilerEnergy = 506; //kw
+		if (this.speed < 8) {
 
-	public double fuelConsumption() {
-		// assume:type:container, oil:RO
-		double fuel = 0;
-		// double SFOC= 213;// ����������HFO(RO), SFOC=213g/kw.h
-		double design_speed = this.ship.getSpeed();
-		double timeSpan = this.spanTime / 3600;// ����
-		double powerkw = this.ship.getPower();
-		double engFactor = 0.220;// aux engine power/main engine power =0.220
-		double auxPower = powerkw * engFactor;
-
-		// ������������������
-		fuel = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC()
-				+ auxPower * timeSpan * this.auxLoadFactor() * this.auxBSFC();
-		// ��������������������������������������������������
-//		System.out.println("design_speed: " + design_speed + "avgSpeed: "
-//				+ this.avgSpeed() + "power:" + powerkw + "sfoc:213"
-//				+ "fuel consumption: " + Math.round(fuel));
-		return Math.round(fuel);
-
-	}
-
-	public String getGridIds() {
-		// ������������������0.1X0.1������������360��������180����������������������1800X3600��������
-		// ������������gridIds������gridId����������������������gridId��@����������gridId��grid ����������
-		// lat*10_lon*10_��������grid��������������
-		double cLat = this.endPoint.lat; // clat =current lat
-		double cLon = this.endPoint.lon;
-		double pLat = this.startPoint.lat;
-		double pLon = this.startPoint.lon;
-
-		String gridIds = "";
-		int enlarge = 10; // ����������������������������100�� ����������������0.01X0.01����������10 ��
-							// 0.1X0.1
-
-		int cLatFloor = (int) Math.floor(cLat * enlarge);
-		int pLatFloor = (int) Math.floor(pLat * enlarge);
-		int cLonFloor = (int) Math.floor(cLon * enlarge);
-		int pLonFloor = (int) Math.floor(pLon * enlarge);
-
-		int latSpan = (int) Math.floor(cLat * enlarge)
-				- (int) Math.floor(pLat * enlarge);// ��������������������(+1 ������
-		int lonSpan = (int) Math.floor(cLon * enlarge)
-				- (int) Math.floor(pLon * enlarge);// ��������������������(+1 ������
-		double percent = 0;// ������grid��������
-
-		// System.out.println("lonspan: " + lonSpan + "   latspan: " + latSpan
-		// + "   point_lat:" + Math.floor(cLat * enlarge) + "   point_lon:"
-		// + Math.floor(cLon * enlarge));
-
-		// ����������������
-		if (cLon == pLon) {// ����������������������������
-
-			if (Math.abs(latSpan) > 0) {// ������������������
-
-				for (int i = 0; i <= Math.abs(latSpan); i++) {
-
-					// ������grid����������,����i������i����������i��0��������0����������������
-					if (i == 0) {
-						percent = (Math.min(cLatFloor, pLatFloor) + 1 - Math
-								.min(cLat, pLat) * enlarge)
-								/ (Math.abs(cLat - pLat) * enlarge);
-					} else if (i == Math.abs(latSpan)) {
-						percent = (Math.max(cLat, pLat) * enlarge - (Math.min(
-								cLatFloor, pLatFloor) + i))// ��������Math.max(cLatFloor,
-															// pLatFloor)
-								/ (Math.abs(cLat - pLat) * enlarge);
-					} else {
-						percent = 1 / (Math.abs(cLat - pLat) * enlarge);
-					}
-					// gridIds
-					gridIds = gridIds + "@" + cLonFloor + "_"
-							+ (Math.min(cLatFloor, pLatFloor) + i) + " "
-							+ percent;
-				}
-			} else {
-				gridIds = gridIds + "@" + (int) cLonFloor + "_"
-						+ (int) cLatFloor + " " + 1;
-			}
-
-		} else {
-
-			// get the line equation
-			double k = (cLat - pLat) / (cLon - pLon);
-			double b = cLat * enlarge - k * cLon * enlarge;
-			// double x = 0;
-			// double y=k*x+b;
-			double[] lats = new double[Math.abs(latSpan) + 1];// ��������������������
-			double[] lons = new double[Math.abs(lonSpan) + 1];// ��������
-			double[] y_lats = new double[Math.abs(lonSpan) + 1];// ?
-			double[] x_lons = new double[Math.abs(latSpan) + 1];// ?
-			double[] point_lons = new double[Math.abs(latSpan)
-					+ Math.abs(lonSpan) + 2]; // ����������������������������������������������������������������������grid��
-
-			point_lons[0] = Math.min(cLon * enlarge, pLon * enlarge);// ��0������lon����������������lon����
-			point_lons[Math.abs(latSpan) + Math.abs(lonSpan) + 1] = Math.max(
-					cLon * enlarge, pLon * enlarge);
-
-			// get the lat direct crosses
-			if (Math.abs(latSpan) > 0) {
-				for (int j = 1; j <= Math.abs(latSpan); j++) {
-					lats[j] = Math.min(cLatFloor, pLatFloor) + j;
-					x_lons[j] = (lats[j] - b) / k;
-					point_lons[j] = x_lons[j];// ��j����lon����
-
-				}
-			}
-
-			// get the lon direct crosses
-			if (Math.abs(lonSpan) > 0) {
-				for (int j = 1; j <= Math.abs(lonSpan); j++) {
-
-					lons[j] = Math.min(cLonFloor, pLonFloor) + j;
-					y_lats[j] = k * lons[j] + b;
-					point_lons[Math.abs(latSpan) + j] = lons[j];
-				}
-			}
-
-			Arrays.sort(point_lons);
-
-			double midPointLon = 0;
-			double midPointLat = 0;
-			double pcent = 0;
-			// create gridIds
-			for (int j = 0; j < point_lons.length - 1; j++) {
-
-				midPointLon = 0.5 * (point_lons[j] + point_lons[j + 1]);// ������������������������gridId
-				midPointLat = k * midPointLon + b;
-				pcent = Math.abs((point_lons[j + 1] - point_lons[j])
-						/ (point_lons[point_lons.length - 1] - point_lons[0]));
-
-				gridIds = gridIds + "@" + (int) Math.floor(midPointLon) + "_"
-						+ (int) Math.floor(midPointLat) + " " // ��������gridId ��
-																// emission
-																// percent ����
-						+ pcent;
-
-			}
+			out = boilerEnergy * timeSpan ;
 
 		}
-
-		return gridIds;
-
+		
+		
+		return out;
 	}
+	
+	
+
+	
+
+	
 
 	public double mainLoadFactor() {
 
 		double factor = 0.0;
-		double load = Math.pow(this.avgSpeed() / this.ship.getSpeed(), 3);
+		double load = Math.pow(this.avgSpeed() / (this.ship.getSpeed()/0.95), 3);
 		if (load < 0.02 && this.speed >=0.5) { // ����ICF 2009�� ����load factor ��0.02
 			factor = 0.02;
 
@@ -420,5 +325,130 @@ public class GeoLine {
 			bw.newLine();			
 
 		}
+	}
+	
+	
+	
+	public String getGridIds() {
+		// ������������������0.1X0.1������������360��������180����������������������1800X3600��������
+		// ������������gridIds������gridId����������������������gridId��@����������gridId��grid ����������
+		// lat*10_lon*10_��������grid��������������
+		double cLat = this.endPoint.lat; // clat =current lat
+		double cLon = this.endPoint.lon;
+		double pLat = this.startPoint.lat;
+		double pLon = this.startPoint.lon;
+
+		String gridIds = "";
+		int enlarge = 10; // ����������������������������100�� ����������������0.01X0.01����������10 ��
+							// 0.1X0.1
+
+		int cLatFloor = (int) Math.floor(cLat * enlarge);
+		int pLatFloor = (int) Math.floor(pLat * enlarge);
+		int cLonFloor = (int) Math.floor(cLon * enlarge);
+		int pLonFloor = (int) Math.floor(pLon * enlarge);
+
+		int latSpan = (int) Math.floor(cLat * enlarge)
+				- (int) Math.floor(pLat * enlarge);// ��������������������(+1 ������
+		int lonSpan = (int) Math.floor(cLon * enlarge)
+				- (int) Math.floor(pLon * enlarge);// ��������������������(+1 ������
+		double percent = 0;// ������grid��������
+
+		// System.out.println("lonspan: " + lonSpan + "   latspan: " + latSpan
+		// + "   point_lat:" + Math.floor(cLat * enlarge) + "   point_lon:"
+		// + Math.floor(cLon * enlarge));
+
+		// ����������������
+		if (cLon == pLon) {// ����������������������������
+
+			if (Math.abs(latSpan) > 0) {// ������������������
+
+				for (int i = 0; i <= Math.abs(latSpan); i++) {
+
+					// ������grid����������,����i������i����������i��0��������0����������������
+					if (i == 0) {
+						percent = (Math.min(cLatFloor, pLatFloor) + 1 - Math
+								.min(cLat, pLat) * enlarge)
+								/ (Math.abs(cLat - pLat) * enlarge);
+					} else if (i == Math.abs(latSpan)) {
+						percent = (Math.max(cLat, pLat) * enlarge - (Math.min(
+								cLatFloor, pLatFloor) + i))// ��������Math.max(cLatFloor,
+															// pLatFloor)
+								/ (Math.abs(cLat - pLat) * enlarge);
+					} else {
+						percent = 1 / (Math.abs(cLat - pLat) * enlarge);
+					}
+					// gridIds
+					gridIds = gridIds + "@" + cLonFloor + "_"
+							+ (Math.min(cLatFloor, pLatFloor) + i) + " "
+							+ percent;
+				}
+			} else {
+				gridIds = gridIds + "@" + (int) cLonFloor + "_"
+						+ (int) cLatFloor + " " + 1;
+			}
+
+		} else {
+
+			// get the line equation
+			double k = (cLat - pLat) / (cLon - pLon);
+			double b = cLat * enlarge - k * cLon * enlarge;
+			// double x = 0;
+			// double y=k*x+b;
+			double[] lats = new double[Math.abs(latSpan) + 1];// ��������������������
+			double[] lons = new double[Math.abs(lonSpan) + 1];// ��������
+			double[] y_lats = new double[Math.abs(lonSpan) + 1];// ?
+			double[] x_lons = new double[Math.abs(latSpan) + 1];// ?
+			double[] point_lons = new double[Math.abs(latSpan)
+					+ Math.abs(lonSpan) + 2]; // ����������������������������������������������������������������������grid��
+
+			point_lons[0] = Math.min(cLon * enlarge, pLon * enlarge);// ��0������lon����������������lon����
+			point_lons[Math.abs(latSpan) + Math.abs(lonSpan) + 1] = Math.max(
+					cLon * enlarge, pLon * enlarge);
+
+			// get the lat direct crosses
+			if (Math.abs(latSpan) > 0) {
+				for (int j = 1; j <= Math.abs(latSpan); j++) {
+					lats[j] = Math.min(cLatFloor, pLatFloor) + j;
+					x_lons[j] = (lats[j] - b) / k;
+					point_lons[j] = x_lons[j];// ��j����lon����
+
+				}
+			}
+
+			// get the lon direct crosses
+			if (Math.abs(lonSpan) > 0) {
+				for (int j = 1; j <= Math.abs(lonSpan); j++) {
+
+					lons[j] = Math.min(cLonFloor, pLonFloor) + j;
+					y_lats[j] = k * lons[j] + b;
+					point_lons[Math.abs(latSpan) + j] = lons[j];
+				}
+			}
+
+			Arrays.sort(point_lons);
+
+			double midPointLon = 0;
+			double midPointLat = 0;
+			double pcent = 0;
+			// create gridIds
+			for (int j = 0; j < point_lons.length - 1; j++) {
+
+				midPointLon = 0.5 * (point_lons[j] + point_lons[j + 1]);// ������������������������gridId
+				midPointLat = k * midPointLon + b;
+				pcent = Math.abs((point_lons[j + 1] - point_lons[j])
+						/ (point_lons[point_lons.length - 1] - point_lons[0]));
+
+				gridIds = gridIds + "@" + (int) Math.floor(midPointLon) + "_"
+						+ (int) Math.floor(midPointLat) + " " // ��������gridId ��
+																// emission
+																// percent ����
+						+ pcent;
+
+			}
+
+		}
+
+		return gridIds;
+
 	}
 }
