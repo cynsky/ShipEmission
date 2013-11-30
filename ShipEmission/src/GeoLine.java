@@ -15,6 +15,10 @@ public class GeoLine {
 	private double distance;
 	static DecimalFormat ft = new DecimalFormat("#########.#");//����������double 123.123������ 123 
 	static int enlarge=10;//scale for the unit grid o.1*0.1 if enlarge =100 0.01*0.01	
+	private long[][] shipOut;
+	private int intSpeed;
+	private double  hourTime;
+	
 
 	public GeoLine(GeoPoint start, GeoPoint end, Ship ship) {
 		this.startPoint = start;
@@ -23,6 +27,9 @@ public class GeoLine {
 		this.distance = this.distance();
 		this.spanTime = this.timeSpan();
 		this.speed = this.avgSpeed();
+		this.shipOut=ship.getShipOut();//get the fuel consumption and co2 emission rate of the ship in a specific speed 
+		this.intSpeed=(int)Math.round(this.speed);
+		this.hourTime=this.spanTime/3600;
 
 	}
 
@@ -34,7 +41,7 @@ public class GeoLine {
 		return this.endPoint;
 	}
 
-	public Ship getShip() {
+	public Ship getShip(){ 
 		return this.ship;
 	}
 
@@ -79,182 +86,50 @@ public class GeoLine {
 	}
 	
 	public double fuelConsumption() {
-		// assume:type:container, oil:RO
-		double fuel = 0;
-		// double SFOC= 213;// ����������HFO(RO), SFOC=213g/kw.h
-		double design_speed = this.ship.getSpeed()/0.95;
-		double timeSpan = this.spanTime / 3600;// ����
-		double powerkw = this.ship.getPower();
-		double engFactor = 0.220;// aux engine power/main engine power =0.220
-		double auxPower = powerkw * engFactor;
-
-		// ������������������
-		fuel = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC()
-				+ auxPower * timeSpan * this.auxLoadFactor() * this.auxBSFC();
-		// ��������������������������������������������������
-//		System.out.println("design_speed: " + design_speed + "avgSpeed: "
-//				+ this.avgSpeed() + "power:" + powerkw + "sfoc:213"
-//				+ "fuel consumption: " + Math.round(fuel));
-		return Math.round(fuel);
-
+		
+		return shipOut[intSpeed][0]*this.hourTime;
 	}
 	
 	public double mainFuelConsumption(){
-		double out=0;
-		double designSpeed = this.ship.getSpeed()/0.95;//knots
-		double timeSpan = this.spanTime / 3600;// hours
-		double powerkw = this.ship.getPower();//kw/hr
-		out = powerkw * timeSpan * this.mainLoadFactor() * this.mainBSFC();
-		
-		return out;
+		return shipOut[intSpeed][1]*this.hourTime;
 		
 	}
 	public double auxFuelConsumption(){
-		double out=0;
+		return shipOut[intSpeed][2]*this.hourTime;
 		
-		
-		return out;
+	}
+	public double boilerFuelConsumption(){
+		return shipOut[intSpeed][3]*this.hourTime;
 		
 	}
 	
 	public double co2Emission() {
-		return Math.round(this.mainEmission() + this.auxEmission()
-				+ this.boilerEmission()); 
-
+		return shipOut[intSpeed][4]*this.hourTime;
 	}
 
-	// ��������
+
 	public double mainEmission() {
 		
-		double emission = 0;
-		double timeSpan = this.spanTime / 3600;// ����
-		double powerkw = this.ship.getPower();
-		
-		emission = powerkw * timeSpan * this.mainLoadFactor()
-				* this.mainEmFactor();
-		return Math.round(emission);
+		return shipOut[intSpeed][5]*this.hourTime;
 
 	}
 
-	// ��������
 	public double auxEmission() {
-		// ��������
-		double emission = 0;
-
-		double timeSpan = this.spanTime / 3600;// ����
-		double powerkw = this.ship.getPower();
-		double engFactor = 0.220;// aux engine power/main engine power =0.220
-		double auxPower = powerkw * engFactor;
-
-		emission = auxPower * timeSpan * this.auxLoadFactor()
-				* this.auxEmFactor();
-
-		return Math.round(emission);
+		return shipOut[intSpeed][6]*this.hourTime;
 
 	}
 
 	public double boilerEmission() {
-		// ��������
-		double eFactor = 922.97;
-		double emission = 0;
+		return shipOut[intSpeed][7]*this.hourTime;
+
+	}
+	
+	public double mainLoadFactor(){
 		
-		emission=this.boilerFuel()*eFactor;
-
-		return Math.round(emission);
-
-	}
-	
-	public double boilerFuel(){
-		double out =0;
-		double timeSpan = this.spanTime / 3600;// hour
-		int boilerEnergy = 506; //kw
-		if (this.speed < 8) {
-
-			out = boilerEnergy * timeSpan ;
-
-		}
+		return Math.pow(this.speed*0.95/ship.getSpeed(), 3);
 		
-		
-		return out;
 	}
 	
-	
-
-	
-
-	
-
-	public double mainLoadFactor() {
-
-		double factor = 0.0;
-		double load = Math.pow(this.avgSpeed() / (this.ship.getSpeed()/0.95), 3);
-		if (load < 0.02 && this.speed >=0.5) { // ����ICF 2009�� ����load factor ��0.02
-			factor = 0.02;
-
-		} else {
-			factor = load;
-
-		}
-		// ����������20%������������������������������������ICF����page 43
-		if (factor < 0.2 && factor > 0.01) {
-			factor = factor * ((44.1 / factor + 648.6) / (44.1 / 0.2 + 648.6));
-		}
-
-		return factor;
-
-	}
-
-	public double auxLoadFactor() {
-		// just for container type
-		double loadFactor = 0.0;
-
-		// assume:
-		// hotelling(0=<speed<1),maneuvering(1=<speed<9),RSZ(9-12),cruise(>12)
-		if (this.speed < 1 && this.speed >= 0) {
-			loadFactor = 0.19;
-		} else if (this.speed < 8 && this.speed >= 1) {
-			loadFactor = 0.48;
-
-		} else if (this.speed < 12 && this.speed >= 8) {
-			loadFactor = 0.25;
-
-		} else if (this.speed >= 12) {
-			loadFactor = 0.13;
-		}
-		return loadFactor;
-
-	}
-
-	public double mainEmFactor() {
-		// ������������������RO��������emission factor=677.91 g/kw.h��BSFC=213g/kw.h
-		double EF = 677.91;
-		return EF;
-
-	}
-
-	public double auxEmFactor() {
-		// ������������������RO��������emission factor=722.54 g/kw.h��BSFC=227g/kw.h
-		double F = 227;
-		return F;
-
-	}
-
-	public double mainBSFC() {
-		// ������������������RO��������emission factor=677.91 g/kw.h��BSFC=213g/kw.h
-		double F = 213;
-		
-		return F;
-
-	}
-
-	public double auxBSFC() {
-		// ������������������RO��������emission factor=722.54 g/kw.h��BSFC=227g/kw.h
-
-		double EF = 227.54;
-		return EF;
-
-	}
-
 	// save the result to a document which could be access by R program
 
 	public void saveToFile(BufferedWriter bw) {
@@ -451,4 +326,6 @@ public class GeoLine {
 		return gridIds;
 
 	}
+
+
 }

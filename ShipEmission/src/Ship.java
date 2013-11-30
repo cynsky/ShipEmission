@@ -11,6 +11,7 @@ public class Ship {
 	private int powerKw;
 	private int dwt;
 	private String type;
+	private long[][] shipOut;
 	// add ship built year
 	
 	public Ship(){
@@ -57,7 +58,9 @@ public class Ship {
 	public String getType(){
 		return this.type;
 	}
-	
+	public long[][] getShipOut(){
+		return this.getShipSpeedEmissions();
+	}
 	public long [][] getShipSpeedEmissions(){
 		long[][] out=new long[300][8];
 		
