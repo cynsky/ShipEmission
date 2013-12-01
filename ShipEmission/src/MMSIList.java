@@ -430,22 +430,12 @@ public class MMSIList {
 
 		if (ships.size() > 0) {
 			
-			try{
-				
-			}catch(Exception e){
-				
-			}finally{
-				
-				
-			}
 
 			for (int i = 0; i < ships.size(); i++) {
 
 				hRst = null;
 				
-				newShape = null;
-				point = null;
-
+				
 				ship = ships.get(i);
 				mmsi = ship.getMMSI();
 				trajectoryQueryHql = "select * from t41_ais_history where row=^"
@@ -455,7 +445,7 @@ public class MMSIList {
 						+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 				hRst = hqlQuery(trajectoryQueryHql);
 				if (hRst.cells.size() > 2) {
-					System.out.println(mmsi
+					System.out.println(mmsi +new java.util.Date()+" "
 							+ " start extract Messages and compress data");
 					for (int k = 0; k < hRst.cells.size(); k++) {
 
@@ -471,7 +461,7 @@ public class MMSIList {
 
 					}
 
-					System.out.println(mmsi + " compress finish:  "
+					System.out.println(mmsi + new java.util.Date() + " compress finish:  "
 							+ " origin: " + oriShape.size() + " new: "
 							+ newShape.size());
 					// deal with compressed data,namely, newshape. calculate the
@@ -509,8 +499,7 @@ public class MMSIList {
 					}catch(Exception e){
 						
 					}finally{
-						System.out.println(new java.util.Date() + " " + mmsi
-								+ "-----------in finally clause ------------");
+						
 						bw.flush(); // 刷新该流的缓冲
 						bw.close();
 						fw.close();

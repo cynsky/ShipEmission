@@ -149,12 +149,15 @@ public class GeoLine {
 					+ ft.format(this.distance) + "@"
 					+ ft.format(this.speed) + "@" 
 					+ this.spanTime + "@"
+					+ ft.format(this.mainLoadFactor()*100)+"@"
+					+ ft.format(this.co2Emission()) + "@" 
 					+ ft.format(this.mainEmission()) + "@" 
 					+ ft.format(this.auxEmission())+ "@" 
 					+ ft.format(this.boilerEmission()) +"@" 
-					+ ft.format(this.co2Emission()) + "@" 
-					+ ft.format(this.mainLoadFactor()*100)+"@"
-					+ ft.format(this.fuelConsumption());
+					+ ft.format(this.fuelConsumption())+"@"
+					+ ft.format(this.mainFuelConsumption()) + "@" 
+					+ ft.format(this.auxFuelConsumption())+ "@" 
+					+ ft.format(this.boilerFuelConsumption());
 			
 			
 
@@ -189,12 +192,15 @@ public class GeoLine {
 					+ gridId.split("_")[1] + "@"
 					+ ft.format(this.speed) + "@" 
 					+ this.spanTime + "@"
+					+ ft.format(this.mainLoadFactor() * 100)+"@"
+					+ ft.format(this.co2Emission() * percent) + "@"
 					+ ft.format(this.mainEmission() * percent) + "@"
 					+ ft.format(this.auxEmission() * percent) + "@"
 					+ ft.format(this.boilerEmission() * percent) + "@"
-					+ ft.format(this.co2Emission() * percent) + "@"
-					+ ft.format(this.mainLoadFactor() * 100)+"@"
-					+ ft.format(this.fuelConsumption() * percent);
+					+ ft.format(this.fuelConsumption() * percent)+"@"
+					+ ft.format(this.mainFuelConsumption()) + "@" 
+					+ ft.format(this.auxFuelConsumption())+ "@" 
+					+ ft.format(this.boilerFuelConsumption());
 
 			bw.write(myreadline); 
 			bw.newLine();			
