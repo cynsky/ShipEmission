@@ -46,9 +46,9 @@ public class MMSIList {
 		client = ThriftClient.create("192.168.9.175", 38080);
 		List<Ship> ships = queryShips(querySql);
 
-		saveMultipleShipTrajectories();
-
-		// countShipAISMsg(containerQuerySql);
+		//saveMultipleShipTrajectories();
+		createSql();//test ucl imos
+		//countShipAISMsg(containerQuerySql);
 
 		// get ais records from hypertable based on ship mmsi
 
@@ -171,7 +171,7 @@ public class MMSIList {
 
 	// extract a single ais messages
 	static List<String> extractAIS(List<String> record) {
-		// 0,mmsi;1,timestamp;2,nav_status;3,rot;4,sog;5,pos_acc;6,lon;7,lat;
+		// 0,mmsi;1,timestamp;2,nav_status;3,rot;4,sog;5,pos_acc;6,lat;7,lon;
 		// 8,cog;9,true_head;10,eta;11,dest_id;12,dest��13,src_id;14,dist_to_port;15,blm_avg_speed
 		List<String> report = new ArrayList<String>();
 		String[] key = record.get(0).split(" ");
@@ -184,6 +184,7 @@ public class MMSIList {
 		for (int j = 0; j < value.length; j++) {
 			report.add(key.length + j, value[j]);
 		}
+		
 		return report;
 	}
 
@@ -358,7 +359,7 @@ public class MMSIList {
 			throws SQLException, TTransportException, TException,
 			ClientException, IOException {
 
-		ResultSet rs;
+		ResultSet rs=null ;
 		Connection conn;
 		Statement st;
 		HqlResult2 aisRcd;
@@ -366,24 +367,32 @@ public class MMSIList {
 		conn = getConnection(); // 同样先要获取连接，即连接到数据库
 		st = conn.createStatement(); // 创建用于执行静态sql语句的Statement对象，st属局部变量
 		rs = st.executeQuery(shipQuerySql); // 执行sql查询语句，返回查询数据的结果集
-		int count = 0;
+
+       
+        int count = 0;
 		int i = 0;
 		List<String> startPoint, endPoint;
 		FileWriter fw;
-
-		fw = new FileWriter("e:/outputs/containerAisCount_shipwithdata.txt");
+		fw = new FileWriter("e:/outputs/ucl_imos.txt");
 		// 创建FileWriter对象，用来写入字符流
 		BufferedWriter cbw = new BufferedWriter(fw); // 将缓冲对文件的输出
-
+       
+		
+//try{
 		while (rs.next()) {
 			i++;
 
 			mmsi = rs.getString("mmsi");
+			
+//			hql = "select * from t41_ais_history where row=^" + "'" + mmsi
+//					+ "'" + "and '2013-01-01' > TIMESTAMP > '2013-01-01'";
 			hql = "select * from t41_ais_history where row=^" + "'" + mmsi
-					+ "'" + "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
+					+ "'" + "and '2013-12-01' > TIMESTAMP > '2013-01-01'";
 			aisRcd = hqlQuery(hql);
 			count = aisRcd.cells.size(); // the output number is set to be less
 											// then Integer.MAX_VALUE=2147483647
+			
+			
 			if (count > 0) {
 				startPoint = aisRcd.cells.get(0);
 				endPoint = aisRcd.cells.get(count - 1);
@@ -400,17 +409,21 @@ public class MMSIList {
 				cbw.write(readLine);
 				cbw.newLine();
 				// System.out.println(myreadline);//
-				System.out.println(i + " " + mmsi + " " + count + " " + sDate
+				System.out.println(rs.getString("imo") + " " + mmsi + " " + count + " " + sDate
 						+ " " + eDate);
 			}
 		}
+
 		cbw.flush();
-		System.out.println("end:" + new java.util.Date());
+		//System.out.println("end:" + new java.util.Date());
 		conn.close();
 		cbw.close();
 
-	}
 
+	}
+	
+	
+// calculate all container ships
 	public static void saveMultipleShipTrajectories()
 			throws TTransportException, TException, ClientException,
 			IOException {
@@ -423,9 +436,10 @@ public class MMSIList {
 		HqlResult2 hRst;
 		GeoPoint endPoint;
 		GeoPoint startPoint;
+		GeoLine line;
 		List<GeoPoint> oriShape = new ArrayList<GeoPoint>();
 		List<GeoPoint> newShape = new ArrayList<GeoPoint>();
-		double tolerance = 1;
+		double tolerance = 2;
 		List<String> point = new ArrayList<String>();
 
 		if (ships.size() > 0) {
@@ -445,32 +459,29 @@ public class MMSIList {
 						+ "and '2013-01-01' > TIMESTAMP > '2012-01-01'";
 				hRst = hqlQuery(trajectoryQueryHql);
 				if (hRst.cells.size() > 2) {
-					System.out.println(mmsi +new java.util.Date()+" "
-							+ " start extract Messages and compress data");
+					
+					System.out.println(mmsi +" extract and compress start:  "+new java.util.Date());
 					for (int k = 0; k < hRst.cells.size(); k++) {
 
 						point = extractAIS(hRst.cells.get(k));
-						oriShape.add(new GeoPoint(point.get(0), Long
+						GeoPoint gPoint= new GeoPoint(point.get(0), Long
 								.parseLong(point.get(1)), Double
 								.parseDouble(point.get(4)), Double
 								.parseDouble(point.get(6)), Double
 								.parseDouble(point.get(7)), Double
-								.parseDouble(point.get(8))));
+								.parseDouble(point.get(8)));
+						oriShape.add(gPoint);
 						newShape = AISTrajectoryCompress.reduceWithTolerance(
 								oriShape, tolerance);
 
 					}
 
-					System.out.println(mmsi + new java.util.Date() + " compress finish:  "
+					System.out.println(mmsi +  new java.util.Date() + " compress finish and start save files:  "
 							+ " origin: " + oriShape.size() + " new: "
 							+ newShape.size());
 					// deal with compressed data,namely, newshape. calculate the
 					// statistic measurements of GeoLine and save to files.
-					System.out
-							.println(new java.util.Date()
-									+ " "
-									+ mmsi
-									+ "-----------start save data to files------------");
+					
 
 					FileWriter fw = new FileWriter(
 							"e:/outputs/container/aisline_" + mmsi + ".txt");// 创建FileWriter对象，用来写入字符流
@@ -482,24 +493,47 @@ public class MMSIList {
 
 					startPoint = newShape.get(0);
 					// geoline info write to aisline.txt
+					int count=0,savedRecords=0;
+					double speed=0;
 					try{
 						
 					
-					for (int j = 1; j < newShape.size(); j++) {
+					for (int j=1;j < newShape.size(); j++) {
 						endPoint = newShape.get(j);
-						GeoLine line = new GeoLine(startPoint, endPoint, ship);
-
+						line= new GeoLine(startPoint, endPoint, ship);
+						speed=line.avgSpeed()*0.95;
+						if(speed>ship.getSpeed()*1.2){ //delete point with much bigger than ship design speep
+							
+							System.out.println("j"+j+"  " +"ship speed: "+Math.round(ship.getSpeed()) +" actual speed:"+Math.round(speed/0.95) + "time: "+line.timeSpan()/3600
+									+" dist "+Math.round(line.distance())+"first sog: "+line.getStartPoint().sog + "second sog" + line.getEndPoint().sog);
+							
+							continue; //skip this step
+							
+							
+						}else if(ship.getSpeed()<speed && speed <=ship.getSpeed()*1.2){ //delete point with much bigger than ship design speep
+							line.setSpeed(ship.getSpeed()); //set the line speed to the max speed;
+							
+						}
+							
+				
+						
 						line.saveToFile(bw);
 						line.gridEmsToFile(bgw);
 						startPoint = endPoint;
+						
+						count=j;
+						savedRecords++;
 
 					}
-					System.out.println(new java.util.Date() + " " + mmsi
-							+ "-----------end save data to files ------------");
+					System.out.println(mmsi + " " +new java.util.Date() + " end data save,count= "+count+ " records saved");
 					}catch(Exception e){
+						System.out.println(mmsi + " in catch clause, count= "+count+"---- "+new java.util.Date());
+						
+						
+						e.printStackTrace();
 						
 					}finally{
-						
+						System.out.println(mmsi + " in finally clause, savedRecords= "+savedRecords+"---- "+new java.util.Date());
 						bw.flush(); // 刷新该流的缓冲
 						bw.close();
 						fw.close();
@@ -517,5 +551,39 @@ public class MMSIList {
 		}
 
 	}
+
+public static String createSql(){
+	String sql="";
+//	// only for ucl test
+	String ucl = "8727903,9510515,9152832,8700046,9286621,9085340,9156773,9432464,9380049,9434539,9088548,9409209,8888070,9454527,9403205,9254630,9286229,9476812,8712764,9045534,7304912,9002556,9501617,9359117,9138240,9448047,7128095,9403774,9175080,9445368,9356103,6703343,9514559,9381524,9085730,9395886,9015539,9634892,9550266,9291341,9385142,9450909,9548225,9423578,9174725,7501871,9585314,8201894,9341378,9321031,9544750,9128128,9461881,9109914,9525340,9059119,8138906,9157686,8608030,9125994,9256353,9067556,9180231,8113554,9162760,8419142,9396763,9082609,9390161";
+    String[] imos=ucl.split(",");
+    System.out.println(imos.length);
+    for(int j=0;j<imos.length;j++){
+    	
+    	sql="SELECT mmsi,imo FROM t41_ship WHERE imo='"+imos[j]+"'";
+    	try {
+			countShipAISMsg(sql);
+		} catch (TTransportException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (TException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClientException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    }
+   
+	return sql;
+}
+
 
 }

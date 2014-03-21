@@ -24,11 +24,11 @@ public class GeoLine {
 		this.startPoint = start;
 		this.endPoint = end;
 		this.ship = ship;
-		this.distance = this.distance();
-		this.spanTime = this.timeSpan();
-		this.speed = this.avgSpeed();
+		this.distance = this.distance(); //mn
+		this.spanTime = this.timeSpan(); //s
+		this.speed = this.avgSpeed(); //knots
 		this.shipOut=ship.getShipOut();//get the fuel consumption and co2 emission rate of the ship in a specific speed 
-		this.intSpeed=(int)Math.round(this.speed);
+		this.intSpeed=(int)Math.round(this.speed*10);
 		this.hourTime=this.spanTime/3600;
 
 	}
@@ -72,20 +72,27 @@ public class GeoLine {
 
 	public double avgSpeed() {
 		int timeTolerance = 600; // s
-		int distanceTolerance=1; //nm
+		int distTolerance=2;//nm
 		double avg_speed = 0;
 		// compute average speed between two points
-		if (this.timeSpan() <= timeTolerance && this.distance()<distanceTolerance) {
+		if (this.timeSpan() <= timeTolerance||this.distance< distTolerance) {
 			avg_speed = 0.5 * 0.1 * (this.startPoint.sog + this.endPoint.sog);
+			
 		} else {
 
 			avg_speed = this.distance()/this.spanTime * 3600;
+			
 		}
 		return avg_speed;
 
 	}
 	
+	public void setSpeed(double speed){
+		this.speed=speed;
+	}
+	
 	public double fuelConsumption() {
+		
 		
 		return shipOut[intSpeed][0]*this.hourTime;
 	}

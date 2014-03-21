@@ -43,7 +43,7 @@ public class GeoPoint implements Cloneable{
 	public final double lat;
 	public final double cog;
 	
-public GeoPoint(String mmsi,long timestamp,double sog,double lon,double lat,double cog) {
+public GeoPoint(String mmsi,long timestamp,double sog,double lat,double lon,double cog) {
 	    this.mmsi=mmsi;
 	    this.timestamp=timestamp;
 	    this.sog=sog;
