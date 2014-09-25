@@ -1,7 +1,10 @@
 eclipse.preferences.version=1
+encoding//src/AreaDataExtract.java=UTF-8
 encoding//src/GeoLine.java=UTF-8
 encoding//src/GeoPoint.java=UTF-8
 encoding//src/MMSIList.java=UTF-8
 encoding//src/Ship.java=UTF-8
 encoding//src/ShipEmissionMain.java=UTF-8
+encoding//src/individualShip/AisDataProcess.java=UTF-8
+encoding//src/individualShip/MainClass.java=UTF-8
 encoding/<project>=US-ASCII
